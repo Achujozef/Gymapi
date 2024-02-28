@@ -140,3 +140,11 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Add your frontend domain
 ]
+
+CLOUDINARY_STORAGE ={
+    'CLOUD_NAME': 'dkocmifft',
+    'API_KEY':'479515447813437',
+    'API_SECRET':'IEX3f2GQWssMdy7MmheqF9Rd8Cc'
+}
+
+DEFAULT_FILE_STORAGE ='cloudinary_storage.storage.MediaCloudinaryStorage'
