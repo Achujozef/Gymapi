@@ -78,3 +78,32 @@ class OTP(models.Model):
         return f"OTP for {self.phone}"
     
 
+class GymEquipment(models.Model):
+    CATEGORY_CHOICES = [
+        ('cardio', 'Cardio'),
+        ('strength', 'Strength'),
+        ('free_weights', 'Free Weights'),
+        ('machines', 'Machines'),
+        ('other', 'Other'),
+    ]
+    CONDITION_CHOICES = [
+        ('new', 'New'),
+        ('used', 'Used'),
+        ('refurbished', 'Refurbished'),
+    ]
+    name = models.CharField(max_length=100)
+    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
+    manufacturer = models.CharField(max_length=100)
+    model_number = models.CharField(max_length=50)
+    purchase_date = models.DateField()
+    purchase_price = models.DecimalField(max_digits=10, decimal_places=2)
+    warranty_information = models.TextField(blank=True, null=True)
+    warranty_expiration_date = models.DateField(blank=True, null=True)
+    condition = models.CharField(max_length=20, choices=CONDITION_CHOICES)
+    maintenance_charge = models.DecimalField(max_digits=10, decimal_places=2)
+    availability = models.BooleanField(default=True)
+    image = models.ImageField(upload_to='equipment_images/', blank=True, null=True)
+    additional_notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
