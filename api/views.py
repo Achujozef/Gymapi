@@ -12,6 +12,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.hashers import make_password
 from .serializers import *
 from django.http import Http404
+from rest_framework.permissions import IsAuthenticated
 
 def send_otp(phone_num, otp):
     print("Reached Otp sent helper")
@@ -176,7 +177,10 @@ class EditEquipment(APIView):
     
 
 class ListBasicEquipment(APIView):
+    permission_classes = [IsAuthenticated]
+    
     def get(self, request):
         equipment = GymEquipment.objects.all()
         serializer = BasicGymEquipmentSerializer(equipment, many=True)
         return Response(serializer.data)
+    
