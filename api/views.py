@@ -13,6 +13,8 @@ from django.contrib.auth.hashers import make_password
 from .serializers import *
 from django.http import Http404
 from rest_framework.permissions import IsAuthenticated
+import cloudinary.uploader
+
 
 def send_otp(phone_num, otp):
     print("Reached Otp sent helper")
@@ -120,6 +122,16 @@ class GymUserCreateAPIView(APIView):
     
 class AddEquipment(APIView):
     def post(self, request):
+  
+        image_data = request.FILES.get('image')
+       
+        if image_data:
+            # Upload image to Cloudinary
+            result = cloudinary.uploader.upload(image_data)
+            image_url = result['secure_url']
+            print("image_url",image_url)
+            request.data['image'] = image_url
+
         serializer = GymEquipmentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -178,7 +190,7 @@ class EditEquipment(APIView):
 
 class ListBasicEquipment(APIView):
     permission_classes = [IsAuthenticated]
-    
+
     def get(self, request):
         equipment = GymEquipment.objects.all()
         serializer = BasicGymEquipmentSerializer(equipment, many=True)

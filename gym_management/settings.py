@@ -11,7 +11,9 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
-
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -141,10 +143,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Add your frontend domain
 ]
 
-CLOUDINARY_STORAGE ={
-    'CLOUD_NAME': 'dkocmifft',
-    'API_KEY':'479515447813437',
-    'API_SECRET':'IEX3f2GQWssMdy7MmheqF9Rd8Cc'
-}
+cloudinary.config(
+    cloud_name="dkocmifft",
+    api_key="479515447813437",
+    api_secret="IEX3f2GQWssMdy7MmheqF9Rd8Cc"
+)
 
 DEFAULT_FILE_STORAGE ='cloudinary_storage.storage.MediaCloudinaryStorage'

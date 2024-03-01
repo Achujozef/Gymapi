@@ -4,3 +4,4 @@ from .models import *
 admin.site.register(OTP)
 admin.site.register(Owner)
 admin.site.register(GymUser)
+admin.site.register(GymEquipment)

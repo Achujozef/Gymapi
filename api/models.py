@@ -102,7 +102,7 @@ class GymEquipment(models.Model):
     condition = models.CharField(max_length=20, choices=CONDITION_CHOICES)
     maintenance_charge = models.DecimalField(max_digits=10, decimal_places=2)
     availability = models.BooleanField(default=True)
-    image = models.ImageField(upload_to='equipment_images/', blank=True, null=True)
+    image = models.CharField(max_length=200, blank=True, null=True)
     additional_notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
