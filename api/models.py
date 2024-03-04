@@ -107,3 +107,9 @@ class GymEquipment(models.Model):
 
     def __str__(self):
         return self.name
+    
+
+class Attendance(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    date = models.DateField(auto_now_add=True)
+    time = models.TimeField(auto_now_add=True)

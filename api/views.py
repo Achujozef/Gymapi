@@ -196,3 +196,25 @@ class ListBasicEquipment(APIView):
         serializer = BasicGymEquipmentSerializer(equipment, many=True)
         return Response(serializer.data)
     
+class MarkAttendance(APIView):
+    def post(self, request):
+        user_id = request.data.get('user_id')
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+                Attendance.objects.create(user=user)
+                return Response({"message": "Attendance marked successfully"}, status=status.HTTP_201_CREATED)
+            except User.DoesNotExist:
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({"error": "User ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+class DeleteAttendance(APIView):
+    def delete(self, request, attendance_id):
+        try:
+            attendance = Attendance.objects.get(id=attendance_id)
+            attendance.delete()
+            return Response({"message": "Attendance record deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        except Attendance.DoesNotExist:
+            return Response({"error": "Attendance record not found"}, status=status.HTTP_404_NOT_FOUND)

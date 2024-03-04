@@ -20,4 +20,6 @@ urlpatterns = [
     path('list-equipment/', ListEquipment.as_view(), name='list-equipment'),#Tested
     path('edit-equipment/<int:pk>/', EditEquipment.as_view(), name='edit-equipment'),#Tested
     path('list-basic-equipment/', ListBasicEquipment.as_view(), name='list-basic-equipment'),
+    path('mark-attendance/', MarkAttendance.as_view(), name='mark-attendance'),
+    path('delete-attendance/<int:attendance_id>/', DeleteAttendance.as_view(), name='delete-attendance'),
 ]
