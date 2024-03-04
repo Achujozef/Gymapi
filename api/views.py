@@ -218,3 +218,63 @@ class DeleteAttendance(APIView):
             return Response({"message": "Attendance record deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
         except Attendance.DoesNotExist:
             return Response({"error": "Attendance record not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+class EnquiryList(APIView):
+    def get(self, request):
+        enquiries = Enquiry.objects.all()
+        serializer = EnquirySerializer(enquiries, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = EnquiryCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            gym = None
+            branch = None
+            added_by = request.user
+            if hasattr(request.user, 'staff'):
+                gym = request.user.staff.gym
+                branch = request.user.staff.branch
+            elif hasattr(request.user, 'gymowner'):
+                gym = request.user.gymowner.gym
+            serializer.save(gym=gym, branch=branch, added_by=added_by)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class EnquiryRetrieve(APIView):
+    def get_object(self, pk):
+        try:
+            return Enquiry.objects.get(pk=pk)
+        except Enquiry.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk):
+        enquiry = self.get_object(pk)
+        serializer = EnquirySerializer(enquiry)
+        return Response(serializer.data)
+    
+class EnquiryUpdate(APIView):
+    def get_object(self, pk):
+        try:
+            return Enquiry.objects.get(pk=pk)
+        except Enquiry.DoesNotExist:
+            raise Http404
+
+    def put(self, request, pk):
+        enquiry = self.get_object(pk)
+        serializer = EnquirySerializer(enquiry, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class EnquiryDelete(APIView):
+    def get_object(self, pk):
+        try:
+            return Enquiry.objects.get(pk=pk)
+        except Enquiry.DoesNotExist:
+            raise Http404
+
+    def delete(self, request, pk):
+        enquiry = self.get_object(pk)
+        enquiry.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

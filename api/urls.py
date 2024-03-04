@@ -22,4 +22,8 @@ urlpatterns = [
     path('list-basic-equipment/', ListBasicEquipment.as_view(), name='list-basic-equipment'),
     path('mark-attendance/', MarkAttendance.as_view(), name='mark-attendance'),
     path('delete-attendance/<int:attendance_id>/', DeleteAttendance.as_view(), name='delete-attendance'),
+    path('enquiries/', EnquiryList.as_view(), name='enquiry-list'),
+    path('enquiries/<int:pk>/', EnquiryRetrieve.as_view(), name='enquiry-retrieve'),
+    path('enquiries/<int:pk>/update/', EnquiryUpdate.as_view(), name='enquiry-update'),
+    path('enquiries/<int:pk>/delete/', EnquiryDelete.as_view(), name='enquiry-delete'),
 ]

@@ -1,22 +1,50 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-# Create your models here.
-from django.db import models
-class Owner(models.Model):
+
+class Gym(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, default=1)  # Default owner ID, change as needed
+    name = models.CharField(max_length=100, default="Gym Name")
+    address = models.CharField(max_length=100, default="Address")
+    phone_number = models.CharField(max_length=15, default="1234567890")
+    email = models.EmailField(default="gym@example.com")
+    has_branches = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
+
+class Branch(models.Model):
+    gym = models.ForeignKey(Gym, on_delete=models.CASCADE, related_name='branches')
+    name = models.CharField(max_length=100, default='Branch Name')
+    address = models.CharField(max_length=100, default='Branch Address')
+    phone_number = models.CharField(max_length=15, default='Branch Phone Number')
+    email = models.EmailField(default='branch@example.com')
+    
+    def __str__(self):
+        return f"{self.name} - {self.gym.name}"
+
+class Staff(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    phone_number = models.CharField(max_length=15)
-    address = models.CharField(max_length=100)
+    gym = models.ForeignKey('Gym', on_delete=models.CASCADE)
+    branch = models.ForeignKey('Branch', on_delete=models.CASCADE, blank=True, null=True)
+    role = models.CharField(max_length=100, default='')  # Default role is an empty string
+    salary = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Default salary is 0
+    hire_date = models.DateField(default='1900-01-01')  # Default hire date is January 1, 1900
 
+    def __str__(self):
+        return f"{self.user.username} - {self.gym.name}"
 
-from django.contrib.auth.models import User
-from django.db import models
+class Member(models.Model):
+    gym = models.ForeignKey(Gym, on_delete=models.CASCADE)
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, blank=True, null=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    # Add more member-specific fields as needed
+
+    def __str__(self):
+        return f"{self.user.username} - {self.gym.name}"
 
 class GymUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    # Personal Information
-    first_name = models.CharField(max_length=100, default='')
-    last_name = models.CharField(max_length=100, default='')
     gender = models.CharField(max_length=10, default='')  # Assuming choices: Male, Female, Other
     date_of_birth = models.DateField(default='1900-01-01')
     contact_number = models.CharField(max_length=15, default='')
@@ -111,5 +139,36 @@ class GymEquipment(models.Model):
 
 class Attendance(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
+    gym = models.ForeignKey('Gym', on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=True)
     time = models.TimeField(auto_now_add=True)
+
+class GymPlan(models.Model):
+    gym = models.ForeignKey('Gym', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, default='Standard Plan')
+    description = models.TextField(default='Basic gym membership plan')
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+class Enquiry(models.Model):
+    gym = models.ForeignKey('Gym', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, default='Anonymous')
+    phone_number = models.CharField(max_length=15, default='')
+    place = models.CharField(max_length=100, default='')
+    email = models.EmailField(default='')
+    plan = models.ForeignKey('GymPlan', on_delete=models.SET_NULL, null=True, blank=True, default=None)
+    expected_joining_date = models.DateField(default='1900-01-01')
+    follow_up_date = models.DateField(default='1900-01-01')
+    enquiry_source = models.CharField(max_length=100, default='')
+    remarks = models.TextField(default='')
+    added_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, default=None)
+    branch = models.ForeignKey('Branch', on_delete=models.SET_NULL, null=True, blank=True, default=None)
+
+
+class GymOwner(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    # Add additional fields for Gym Owner as needed
+    phone_number = models.CharField(max_length=15)
+    address = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.user.username
