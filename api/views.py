@@ -1,7 +1,7 @@
 import random
 from django.http import HttpRequest
 import requests
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -291,3 +291,65 @@ class EnquiryListView(APIView):
             enquiries = enquiries.filter(gym=gym)
         serializer = EnquirySerializer(enquiries, many=True)
         return Response(serializer.data)
+    
+
+
+class GymUserCreateView(APIView):
+    def post(self, request):
+        data = request.data
+        
+        current_user = request.user
+        
+        gym = None
+        branch = None
+        try:
+            member = Member.objects.get(user=current_user)
+            gym = member.gym
+            branch = member.branch
+        except Member.DoesNotExist:
+            pass
+        
+        user = User.objects.create_user(
+            username=data.get('contact_number'),
+            password='12345678',  
+            email=data.get('email')
+        )
+        membership_type_id = data.get('membership_type')
+        membership_type = get_object_or_404(GymPlan, pk=membership_type_id)
+        member = Member.objects.create(
+            user=user,
+            gym=gym,
+            branch=branch,
+            is_user=True
+        )
+        
+        gym_user = GymUser.objects.create(
+            user=user,
+            gender=data.get('gender'),
+            date_of_birth=data.get('date_of_birth'),
+            contact_number=data.get('contact_number'),
+            email=data.get('email'),
+            address=data.get('address'),
+            membership_type=membership_type,
+            joining_date=data.get('joining_date'),
+            membership_expiry_date=data.get('membership_expiry_date'),
+            is_active=data.get('is_active'),
+            health_conditions=data.get('health_conditions'),
+            fitness_goals=data.get('fitness_goals'),
+            workout_schedule=data.get('workout_schedule'),
+            exercise_restrictions=data.get('exercise_restrictions'),
+            emergency_contact_name=data.get('emergency_contact_name'),
+            emergency_contact_phone_number=data.get('emergency_contact_phone_number'),
+            emergency_contact_relationship=data.get('emergency_contact_relationship'),
+            membership_id_number=data.get('membership_id_number'),
+            access_information=data.get('access_information'),
+            assigned_personal_trainer=data.get('assigned_personal_trainer'),
+            trainer_contact_information=data.get('trainer_contact_information'),
+            assigned_locker_number=data.get('assigned_locker_number'),
+            feedback=data.get('feedback'),
+            weight=data.get('weight')
+        )
+        
+        serializer = GymUserSerializer(gym_user)
+        
+        return Response(serializer.data, status=status.HTTP_201_CREATED)

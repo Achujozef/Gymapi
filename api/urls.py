@@ -27,4 +27,5 @@ urlpatterns = [
     path('enquiries/<int:pk>/update/', EnquiryUpdate.as_view(), name='enquiry-update'),
     path('enquiries/<int:pk>/delete/', EnquiryDelete.as_view(), name='enquiry-delete'),
     path('enquiries/', EnquiryListView.as_view(), name='enquiry-list'),
+    path('create-gym-user/', GymUserCreateView.as_view(), name='create-gym-user'),
 ]

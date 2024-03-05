@@ -24,3 +24,8 @@ class EnquiryCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Enquiry
         exclude = ['branch', 'added_by', 'gym']
+
+class GymUserCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GymUser
+        fields = '__all__'

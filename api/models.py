@@ -27,9 +27,9 @@ class Staff(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     gym = models.ForeignKey('Gym', on_delete=models.CASCADE)
     branch = models.ForeignKey('Branch', on_delete=models.CASCADE, blank=True, null=True)
-    role = models.CharField(max_length=100, default='')  # Default role is an empty string
-    salary = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # Default salary is 0
-    hire_date = models.DateField(default='1900-01-01')  # Default hire date is January 1, 1900
+    role = models.CharField(max_length=100, default='') 
+    salary = models.DecimalField(max_digits=10, decimal_places=2, default=0)  
+    hire_date = models.DateField(default='1900-01-01') 
 
     def __str__(self):
         return f"{self.user.username} - {self.gym.name}"
@@ -98,8 +98,7 @@ class GymUser(models.Model):
         ('Inactive', 'Inactive'),
         ('Suspended', 'Suspended'),
     ]
-    membership_status = models.CharField(max_length=20, choices=MEMBERSHIP_STATUS_CHOICES, default='')
-    membership_plan = models.CharField(max_length=100, default='')
+    is_active = models.BooleanField(default=True)
     health_conditions = models.TextField(default='')
     fitness_goals = models.TextField(default='')
     workout_schedule = models.TextField(default='')
