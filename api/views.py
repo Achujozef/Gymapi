@@ -219,7 +219,7 @@ class DeleteAttendance(APIView):
         except Attendance.DoesNotExist:
             return Response({"error": "Attendance record not found"}, status=status.HTTP_404_NOT_FOUND)
         
-class EnquiryList(APIView):
+class EnquiryCreate(APIView):
     def get(self, request):
         enquiries = Enquiry.objects.all()
         serializer = EnquirySerializer(enquiries, many=True)
@@ -278,3 +278,16 @@ class EnquiryDelete(APIView):
         enquiry = self.get_object(pk)
         enquiry.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+class EnquiryListView(APIView):
+    def get(self, request):
+        enquiries = Enquiry.objects.all()
+        if hasattr(request.user, 'staff'):
+            gym = request.user.staff.gym
+            branch = request.user.staff.branch
+            enquiries = enquiries.filter(gym=gym, branch=branch)
+        elif hasattr(request.user, 'gymowner'):
+            gym = request.user.gymowner.gym
+            enquiries = enquiries.filter(gym=gym)
+        serializer = EnquirySerializer(enquiries, many=True)
+        return Response(serializer.data)
