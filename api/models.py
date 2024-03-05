@@ -38,10 +38,50 @@ class Member(models.Model):
     gym = models.ForeignKey(Gym, on_delete=models.CASCADE)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, blank=True, null=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    # Add more member-specific fields as needed
+    is_owner = models.BooleanField(default=False)
+    is_trainer = models.BooleanField(default=False)
+    is_staff = models.BooleanField(default=False)
+    is_user =  models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.username} - {self.gym.name}"
+
+
+class GymTrainer(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    GENDER_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+        ('other', 'Other'),
+    ]
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES)
+    date_of_birth = models.DateField()
+    contact_number = models.CharField(max_length=15)
+    email = models.EmailField()
+    trainer_id = models.CharField(max_length=100)
+    certification_level = models.CharField(max_length=100)
+    certification_expiry_date = models.DateField()
+    education_and_training_background = models.TextField()
+    regular_working_hours = models.CharField(max_length=100)
+    areas_of_expertise = models.TextField()
+    specialized_certifications_or_skills = models.TextField()
+    bio = models.TextField()
+    profile_picture = models.ImageField(upload_to='trainer_profile_pictures/', blank=True, null=True)
+    salary = models.DecimalField(max_digits=10, decimal_places=2)
+    bonus_or_commission_information = models.CharField(max_length=100, blank=True, null=True)
+    documents = models.FileField(upload_to='trainer_documents/', blank=True, null=True)
+    emergency_contact_information = models.CharField(max_length=100)
+    health_conditions = models.TextField()
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} (Trainer ID: {self.trainer_id})"
+
+class GymPlan(models.Model):
+    gym = models.ForeignKey('Gym', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, default='Standard Plan')
+    description = models.TextField(default='Basic gym membership plan')
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
 
 class GymUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -50,14 +90,7 @@ class GymUser(models.Model):
     contact_number = models.CharField(max_length=15, default='')
     email = models.EmailField(default='')
     address = models.TextField(default='')
-
-    # Membership Information
-    MEMBERSHIP_CHOICES = [
-        ('Monthly', 'Monthly'),
-        ('Annual', 'Annual'),
-        # Add more choices as needed
-    ]
-    membership_type = models.CharField(max_length=20, choices=MEMBERSHIP_CHOICES, default='')
+    membership_type = models.ForeignKey(GymPlan, on_delete=models.SET_NULL, null=True, blank=True)
     joining_date = models.DateField(default='1900-01-01')
     membership_expiry_date = models.DateField(default='1900-01-01')
     MEMBERSHIP_STATUS_CHOICES = [
@@ -67,34 +100,22 @@ class GymUser(models.Model):
     ]
     membership_status = models.CharField(max_length=20, choices=MEMBERSHIP_STATUS_CHOICES, default='')
     membership_plan = models.CharField(max_length=100, default='')
-
-    # Health and Fitness Profile
     health_conditions = models.TextField(default='')
     fitness_goals = models.TextField(default='')
     workout_schedule = models.TextField(default='')
     exercise_restrictions = models.TextField(default='')
-
-    # Emergency Contact Information
     emergency_contact_name = models.CharField(max_length=100, default='')
     emergency_contact_phone_number = models.CharField(max_length=15, default='')
     emergency_contact_relationship = models.CharField(max_length=100, default='')
-
-    # Access Control
     membership_id_number = models.CharField(max_length=50, default='')
     access_information = models.CharField(max_length=100, default='RFID')  # RFID, Barcode, etc.
-
-    # Personal Trainer Assignment
     assigned_personal_trainer = models.CharField(max_length=100, blank=True, null=True, default='')
     trainer_contact_information = models.CharField(max_length=100, blank=True, null=True, default='')
-
-    # Locker Assignment
     assigned_locker_number = models.CharField(max_length=20, blank=True, null=True, default='')
-
-    # Survey and Feedback Responses
     feedback = models.TextField(blank=True, null=True, default='')
-
-    # Document Attachments
     documents = models.FileField(upload_to='documents/', blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='user_profile_pictures/', blank=True, null=True)
+    weight = models.FloatField(blank=True, null=True)
 
         
 class OTP(models.Model):
@@ -143,11 +164,7 @@ class Attendance(models.Model):
     date = models.DateField(auto_now_add=True)
     time = models.TimeField(auto_now_add=True)
 
-class GymPlan(models.Model):
-    gym = models.ForeignKey('Gym', on_delete=models.CASCADE)
-    name = models.CharField(max_length=100, default='Standard Plan')
-    description = models.TextField(default='Basic gym membership plan')
-    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
 
 class Enquiry(models.Model):
     gym = models.ForeignKey('Gym', on_delete=models.CASCADE)
@@ -166,7 +183,6 @@ class Enquiry(models.Model):
 
 class GymOwner(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    # Add additional fields for Gym Owner as needed
     phone_number = models.CharField(max_length=15)
     address = models.CharField(max_length=100)
 
