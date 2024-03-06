@@ -142,7 +142,8 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # Add your frontend domain
 ]
-
+import cloudinary
+import cloudinary_storage
 cloudinary.config(
     cloud_name="dkocmifft",
     api_key="479515447813437",

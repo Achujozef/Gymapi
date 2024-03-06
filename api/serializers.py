@@ -37,3 +37,5 @@ class AttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attendance
         fields = ['id', 'user', 'gym', 'branch', 'date', 'time']
+
+

@@ -439,3 +439,52 @@ class GymOwnerRegistrationView(APIView):
             gym_contact=gym_contact
         )
         return Response({'message': 'Gym owner registered successfully.'}, status=status.HTTP_201_CREATED)
+    
+class UserProfileView(APIView):
+    def get(self, request):
+        try:
+            gym_user = GymUser.objects.get(user=request.user)
+            serializer = GymUserSerializer(gym_user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except GymUser.DoesNotExist:
+            return Response({'message': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
+
+class UserProfileEditView(APIView):
+    def put(self, request):
+        try:
+            gym_user = GymUser.objects.get(user=request.user)
+            request.data["user"]=gym_user.id
+            serializer = GymUserSerializer(gym_user, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except GymUser.DoesNotExist:
+            return Response({'message': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
+from django.utils import timezone
+from datetime import datetime
+
+class UserProfileDetailsView(APIView):
+    def get(self, request):
+        try:
+            user_profile = GymUser.objects.get(user=request.user)
+            latest_weight = user_profile.weights.order_by('-measured_at').first()
+
+            # Make joining_date offset-aware
+            joining_date_aware = timezone.make_aware(datetime(user_profile.joining_date.year, user_profile.joining_date.month, user_profile.joining_date.day))
+
+            # Calculate days since joined
+            days_since_joined = (timezone.now() - joining_date_aware).days
+            user_goal = user_profile.fitness_goals
+
+            response_data = {
+                'username': request.user.username,
+                'latest_weight': latest_weight.weight if latest_weight else None,
+                'profile_picture': user_profile.profile_picture.url if user_profile.profile_picture else None,
+                'days_since_joined': days_since_joined,
+                'user_goal': user_goal
+            }
+
+            return Response(response_data, status=status.HTTP_200_OK)
+        except GymUser.DoesNotExist:
+            return Response({'message': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)

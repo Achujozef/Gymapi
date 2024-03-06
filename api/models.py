@@ -117,7 +117,14 @@ class GymUser(models.Model):
     profile_picture = models.ImageField(upload_to='user_profile_pictures/', blank=True, null=True)
     weight = models.FloatField(blank=True, null=True)
 
-        
+class UserWeight(models.Model):
+    user = models.ForeignKey(GymUser, on_delete=models.CASCADE, related_name='weights')
+    weight = models.FloatField()
+    measured_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.user.username} - {self.weight} kg - {self.measured_at}"
+    
 class OTP(models.Model):
     phone = models.CharField(max_length=15)
     otp = models.CharField(max_length=6)
@@ -197,3 +204,5 @@ class GymOwner(models.Model):
 
     def __str__(self):
         return self.user.username
+
+
