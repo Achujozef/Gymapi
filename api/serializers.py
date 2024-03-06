@@ -29,3 +29,11 @@ class GymUserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = GymUser
         fields = '__all__'
+
+
+
+
+class AttendanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attendance
+        fields = ['id', 'user', 'gym', 'branch', 'date', 'time']

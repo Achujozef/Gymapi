@@ -1,3 +1,4 @@
+import datetime
 import random
 from django.http import HttpRequest
 import requests
@@ -196,19 +197,65 @@ class ListBasicEquipment(APIView):
         serializer = BasicGymEquipmentSerializer(equipment, many=True)
         return Response(serializer.data)
     
-class MarkAttendance(APIView):
+class AddAttendanceView(APIView):
     def post(self, request):
-        user_id = request.data.get('user_id')
-        if user_id:
+
+        current_user = request.user
+        try:
+            gym_owner = GymOwner.objects.get(user=current_user)
+            gym = gym_owner.gym
+            branch = None 
+        except GymOwner.DoesNotExist:
             try:
-                user = User.objects.get(id=user_id)
-                Attendance.objects.create(user=user)
-                return Response({"message": "Attendance marked successfully"}, status=status.HTTP_201_CREATED)
-            except User.DoesNotExist:
-                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            return Response({"error": "User ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+                staff = Staff.objects.get(user=current_user)
+                gym = staff.gym
+                branch = staff.branch
+            except Staff.DoesNotExist:
+                return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_id = request.data.get('user_id')
+        user_type = request.data.get('user_type')  # Possible values: 'user', 'trainer', 'staff'
+
+
+        if not user_id or not user_type:
+            return Response({'error': 'Missing required fields in request'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            if user_type == 'user':
+                user = User.objects.get(pk=user_id)
+                if not Member.objects.filter(user=user, gym=gym).exists():
+                    return Response({'error': 'User is not associated with the gym'}, status=status.HTTP_400_BAD_REQUEST)
+            elif user_type == 'trainer':
+                trainer = GymTrainer.objects.get(user=user_id)
+                if trainer.gym != gym:
+                    return Response({'error': 'Trainer is not associated with the gym'}, status=status.HTTP_400_BAD_REQUEST)
+            elif user_type == 'staff':
+                staff = Staff.objects.get(pk=user_id)
+                if staff.gym != gym:
+                    return Response({'error': 'Staff member is not associated with the gym'}, status=status.HTTP_400_BAD_REQUEST)
+            else:
+                return Response({'error': 'Invalid user type'}, status=status.HTTP_400_BAD_REQUEST)
+        except (User.DoesNotExist, GymTrainer.DoesNotExist, Staff.DoesNotExist):
+            return Response({'error': 'User does not exist or is not associated with the gym'}, status=status.HTTP_400_BAD_REQUEST)
+
+        Attendance.objects.create(
+            user=user,
+            gym=gym,
+            branch=branch
+        )
+
+        return Response({'message': 'Attendance recorded successfully'}, status=status.HTTP_201_CREATED)
         
+
+
+class AttendanceListView(APIView):
+    def get(self, request):
+        # Retrieve all attendance records
+        attendance = Attendance.objects.all()
+        # Serialize the data
+        serializer = AttendanceSerializer(attendance, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class DeleteAttendance(APIView):
     def delete(self, request, attendance_id):
@@ -220,11 +267,6 @@ class DeleteAttendance(APIView):
             return Response({"error": "Attendance record not found"}, status=status.HTTP_404_NOT_FOUND)
         
 class EnquiryCreate(APIView):
-    def get(self, request):
-        enquiries = Enquiry.objects.all()
-        serializer = EnquirySerializer(enquiries, many=True)
-        return Response(serializer.data)
-
     def post(self, request):
         serializer = EnquiryCreateSerializer(data=request.data)
         if serializer.is_valid():

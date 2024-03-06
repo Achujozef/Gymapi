@@ -20,13 +20,21 @@ urlpatterns = [
     path('list-equipment/', ListEquipment.as_view(), name='list-equipment'),#Testedadd-equipment
     path('edit-equipment/<int:pk>/', EditEquipment.as_view(), name='edit-equipment'),#Tested
     path('list-basic-equipment/', ListBasicEquipment.as_view(), name='list-basic-equipment'),
-    path('mark-attendance/', MarkAttendance.as_view(), name='mark-attendance'),
     path('delete-attendance/<int:attendance_id>/', DeleteAttendance.as_view(), name='delete-attendance'),
-    path('enquiries-create/', EnquiryCreate.as_view(), name='enquiry-list'),
     path('enquiries/<int:pk>/', EnquiryRetrieve.as_view(), name='enquiry-retrieve'),
     path('enquiries/<int:pk>/update/', EnquiryUpdate.as_view(), name='enquiry-update'),
     path('enquiries/<int:pk>/delete/', EnquiryDelete.as_view(), name='enquiry-delete'),
     path('enquiries/', EnquiryListView.as_view(), name='enquiry-list'),
+    
+
+
+    path('enquiries-create/', EnquiryCreate.as_view(), name='enquiry-list'),
     path('create-gym-user/', GymUserCreateView.as_view(), name='create-gym-user'),
+    path('mark-attendance/', AddAttendanceView.as_view(), name='mark-attendance'),
     path('register-gym-owner/', GymOwnerRegistrationView.as_view(), name='register_gym_owner'),
+
+
+
+
+     path('attendance/', AttendanceListView.as_view(), name='attendance-list'),
 ]
