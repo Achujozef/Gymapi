@@ -149,5 +149,10 @@ cloudinary.config(
     api_key="479515447813437",
     api_secret="IEX3f2GQWssMdy7MmheqF9Rd8Cc"
 )
-
-DEFAULT_FILE_STORAGE ='cloudinary_storage.storage.MediaCloudinaryStorage'
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': 'dkocmifft',
+    'API_KEY': '479515447813437',
+    'API_SECRET': 'IEX3f2GQWssMdy7MmheqF9Rd8Cc'
+}
+# Set the default file storage to Cloudinary
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
