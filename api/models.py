@@ -78,6 +78,7 @@ class GymTrainer(models.Model):
 
 class GymPlan(models.Model):
     gym = models.ForeignKey('Gym', on_delete=models.CASCADE)
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=100, default='Standard Plan')
     description = models.TextField(default='Basic gym membership plan')
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
@@ -139,6 +140,8 @@ class GymEquipment(models.Model):
         ('used', 'Used'),
         ('refurbished', 'Refurbished'),
     ]
+    gym = models.ForeignKey('Gym', on_delete=models.CASCADE,null=True, blank=True, default=None)
+    branch = models.ForeignKey('Branch', on_delete=models.SET_NULL, null=True, blank=True, default=None)
     name = models.CharField(max_length=100)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES)
     manufacturer = models.CharField(max_length=100)
@@ -160,6 +163,7 @@ class GymEquipment(models.Model):
 class Attendance(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     gym = models.ForeignKey('Gym', on_delete=models.CASCADE)
+    branch = models.ForeignKey('Branch', on_delete=models.SET_NULL, null=True, blank=True, default=None)
     date = models.DateField(auto_now_add=True)
     time = models.TimeField(auto_now_add=True)
 
@@ -184,6 +188,12 @@ class GymOwner(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone_number = models.CharField(max_length=15)
     address = models.CharField(max_length=100)
+    gym_name = models.CharField(max_length=100, default='Default Gym Name')  
+    state = models.CharField(max_length=100, default='')  
+    district = models.CharField(max_length=100, default='')  
+    city = models.CharField(max_length=100, default='')  
+    gym_contact = models.CharField(max_length=15, blank=True, null=True)  
+    branch_count = models.IntegerField(default=0) 
 
     def __str__(self):
         return self.user.username

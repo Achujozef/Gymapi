@@ -353,3 +353,47 @@ class GymUserCreateView(APIView):
         serializer = GymUserSerializer(gym_user)
         
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+
+class GymOwnerRegistrationView(APIView):
+    def post(self, request):
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        phone_number = request.data.get('phone_number')
+        email = request.data.get('email')
+        gym_name = request.data.get('gym_name')
+        address = request.data.get('address')
+        password = request.data.get('password')
+        state = request.data.get('state')
+        district = request.data.get('district')
+        city = request.data.get('city')
+        branch_count = request.data.get('branch_count')
+        gym_contact = request.data.get('gym_contact')
+
+        required_fields = ['first_name', 'last_name', 'phone_number', 'email', 'gym_name', 'address', 'password', 'state', 'district', 'city', 'branch_count']
+        for field in required_fields:
+            if field not in request.data:
+                return Response({'error': f'Missing required field: {field}'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(username=phone_number).exists():
+            return Response({'error': 'Phone number is already registered'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.create_user(
+            username=phone_number, 
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            password=password
+        )
+        gym_owner = GymOwner.objects.create(
+            user=user,
+            phone_number=phone_number,
+            gym_name=gym_name,
+            address=address,
+            state=state,
+            branch_count=branch_count,
+            city=city,
+            district=district,
+            gym_contact=gym_contact
+        )
+        return Response({'message': 'Gym owner registered successfully.'}, status=status.HTTP_201_CREATED)

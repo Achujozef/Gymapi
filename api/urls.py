@@ -17,7 +17,7 @@ urlpatterns = [
     path('delete-equipment/<int:pk>/', DeleteEquipment.as_view(), name='delete-equipment'),#Tested
     path('list-unlist-equipment/<int:pk>/', ListUnlistEquipment.as_view(), name='list-unlist-equipment'),#Tested
     path('read-equipment/<int:pk>/', ReadEquipment.as_view(), name='read-equipment'),#Tested
-    path('list-equipment/', ListEquipment.as_view(), name='list-equipment'),#Tested
+    path('list-equipment/', ListEquipment.as_view(), name='list-equipment'),#Testedadd-equipment
     path('edit-equipment/<int:pk>/', EditEquipment.as_view(), name='edit-equipment'),#Tested
     path('list-basic-equipment/', ListBasicEquipment.as_view(), name='list-basic-equipment'),
     path('mark-attendance/', MarkAttendance.as_view(), name='mark-attendance'),
@@ -28,4 +28,5 @@ urlpatterns = [
     path('enquiries/<int:pk>/delete/', EnquiryDelete.as_view(), name='enquiry-delete'),
     path('enquiries/', EnquiryListView.as_view(), name='enquiry-list'),
     path('create-gym-user/', GymUserCreateView.as_view(), name='create-gym-user'),
+    path('register-gym-owner/', GymOwnerRegistrationView.as_view(), name='register_gym_owner'),
 ]
