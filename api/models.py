@@ -117,7 +117,8 @@ class GymUser(models.Model):
     profile_picture = models.ImageField(upload_to='user_profile_pictures/', blank=True, null=True)
     weight = models.FloatField(blank=True, null=True)
     height = models.FloatField(blank=True, null=True)
-
+    proffession = models.CharField(max_length=100, default='')
+    
 class UserWeight(models.Model):
     user = models.ForeignKey(GymUser, on_delete=models.CASCADE, related_name='weights')
     weight = models.FloatField()
