@@ -123,16 +123,24 @@ class GymUserCreateAPIView(APIView):
     
 class AddEquipment(APIView):
     def post(self, request):
-  
-        image_data = request.FILES.get('image')
-       
-        if image_data:
-            # Upload image to Cloudinary
-            result = cloudinary.uploader.upload(image_data)
-            image_url = result['secure_url']
-            print("image_url",image_url)
-            request.data['image'] = image_url
+        current_user = request.user
+        try:
+            gym_owner = GymOwner.objects.get(user=current_user)
+            gym = gym_owner.gym
+            branch = None
+        except GymOwner.DoesNotExist:
+            try:
+                staff = Staff.objects.get(user=current_user)
+                gym = staff.gym
+                branch = staff.branch
+            except Staff.DoesNotExist:
+                return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Add gym and branch to request data
+        request.data['gym'] = gym.id
+        request.data['branch'] = branch.id if branch else None
+
+        # Create the equipment using the serializer
         serializer = GymEquipmentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -445,7 +453,10 @@ class UserProfileView(APIView):
         try:
             gym_user = GymUser.objects.get(user=request.user)
             serializer = GymUserSerializer(gym_user)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            user_data= serializer.data
+            user_data['first_name']=request.user.first_name
+            user_data['last_name']=request.user.last_name
+            return Response(user_data, status=status.HTTP_200_OK)
         except GymUser.DoesNotExist:
             return Response({'message': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -469,11 +480,7 @@ class UserProfileDetailsView(APIView):
         try:
             user_profile = GymUser.objects.get(user=request.user)
             latest_weight = user_profile.weights.order_by('-measured_at').first()
-
-            # Make joining_date offset-aware
             joining_date_aware = timezone.make_aware(datetime(user_profile.joining_date.year, user_profile.joining_date.month, user_profile.joining_date.day))
-
-            # Calculate days since joined
             days_since_joined = (timezone.now() - joining_date_aware).days
             user_goal = user_profile.fitness_goals
 
