@@ -495,3 +495,35 @@ class UserProfileDetailsView(APIView):
             return Response(response_data, status=status.HTTP_200_OK)
         except GymUser.DoesNotExist:
             return Response({'message': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+class AttendanceCountView(APIView):
+    def get(self, request):
+        current_user = request.user
+
+        try:
+            # Check if the user is a gym owner
+            gym_owner = GymOwner.objects.get(user=current_user)
+            gym = gym_owner.gym
+            branch = None
+        except GymOwner.DoesNotExist:
+            try:
+                # Check if the user is a staff member
+                staff = Staff.objects.get(user=current_user)
+                gym = staff.gym
+                branch = staff.branch
+            except Staff.DoesNotExist:
+                # If the user is neither a gym owner nor a staff member
+                return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get the current date
+        current_date = timezone.now().date()
+
+        # Filter attendance based on gym and branch (if any) and current date
+        attendance_count = Attendance.objects.filter(
+            gym=gym,
+            branch=branch,
+            date=current_date
+        ).count()
+
+        return Response({'attendance_count': attendance_count}, status=status.HTTP_200_OK)

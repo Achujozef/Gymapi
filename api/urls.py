@@ -36,7 +36,7 @@ urlpatterns = [
     path('user-profile/', UserProfileView.as_view(), name='user-profile'),
     path('user-profile/edit/', UserProfileEditView.as_view(), name='user-profile-edit'),
     path('user-homescreen/', UserProfileDetailsView.as_view(), name='user_profile_details'),
-
+    path('attendance/count/', AttendanceCountView.as_view(), name='attendance_count'),
 
     path('attendance/', AttendanceListView.as_view(), name='attendance-list'),
 
