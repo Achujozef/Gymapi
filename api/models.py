@@ -77,12 +77,20 @@ class GymTrainer(models.Model):
         return f"{self.first_name} {self.last_name} (Trainer ID: {self.trainer_id})"
 
 class GymPlan(models.Model):
+    DURATION_CHOICES = [
+        ('day', 'Day'),
+        ('month', 'Month'),
+        ('year', 'Year'),
+        ('lifetime', 'Lifetime'),
+    ]
+    
     gym = models.ForeignKey('Gym', on_delete=models.CASCADE)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE, blank=True, null=True)
     name = models.CharField(max_length=100, default='Standard Plan')
     description = models.TextField(default='Basic gym membership plan')
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-
+    duration = models.PositiveIntegerField(default=1) 
+    duration_type = models.CharField(max_length=10, choices=DURATION_CHOICES, default='month')
 
 class GymUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -118,7 +126,7 @@ class GymUser(models.Model):
     weight = models.FloatField(blank=True, null=True)
     height = models.FloatField(blank=True, null=True)
     proffession = models.CharField(max_length=100, default='')
-    
+
 class UserWeight(models.Model):
     user = models.ForeignKey(GymUser, on_delete=models.CASCADE, related_name='weights')
     weight = models.FloatField()
@@ -208,3 +216,34 @@ class GymOwner(models.Model):
         return self.user.username
 
 
+class Transaction(models.Model):
+    TRANSACTION_TYPES = [
+        ('fees', 'Fees'),
+        ('salary', 'Salary'),
+        ('maintenance', 'Equipment Maintenance'),
+        ('other_expense', 'Other Expense'),
+    ]
+
+    transaction_type = models.CharField(max_length=15, choices=TRANSACTION_TYPES)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    date = models.DateField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    gym = models.ForeignKey('Gym', on_delete=models.CASCADE)
+    branch = models.ForeignKey('Branch', on_delete=models.SET_NULL, null=True, blank=True, default=None)
+    description = models.TextField(default='')
+    def __str__(self):
+        return f"{self.transaction_type} - {self.amount} - {self.date}"
+
+
+class FeesTransaction(Transaction):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    plan = models.ForeignKey(GymPlan, on_delete=models.CASCADE)
+
+class SalaryTransaction(Transaction):
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE)
+
+class MaintenanceTransaction(Transaction):
+    equipment = models.ForeignKey(GymEquipment, on_delete=models.CASCADE)
+
+class OtherExpenseTransaction(Transaction):
+    pass

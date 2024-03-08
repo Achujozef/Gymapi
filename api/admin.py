@@ -14,7 +14,10 @@ admin.site.register(Staff)
 admin.site.register(Branch)
 admin.site.register(Gym)
 admin.site.register(UserWeight)
-
+admin.site.register(Transaction)
+admin.site.register(FeesTransaction)
+admin.site.register(SalaryTransaction)
+admin.site.register(MaintenanceTransaction)
 
 
 

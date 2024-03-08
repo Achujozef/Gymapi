@@ -15,7 +15,7 @@ from .serializers import *
 from django.http import Http404
 from rest_framework.permissions import IsAuthenticated
 import cloudinary.uploader
-
+from datetime import datetime, timedelta
 
 def send_otp(phone_num, otp):
     print("Reached Otp sent helper")
@@ -136,11 +136,9 @@ class AddEquipment(APIView):
             except Staff.DoesNotExist:
                 return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Add gym and branch to request data
         request.data['gym'] = gym.id
         request.data['branch'] = branch.id if branch else None
 
-        # Create the equipment using the serializer
         serializer = GymEquipmentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -222,7 +220,7 @@ class AddAttendanceView(APIView):
                 return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
 
         user_id = request.data.get('user_id')
-        user_type = request.data.get('user_type')  # Possible values: 'user', 'trainer', 'staff'
+        user_type = request.data.get('user_type')  
 
 
         if not user_id or not user_type:
@@ -258,9 +256,7 @@ class AddAttendanceView(APIView):
 
 class AttendanceListView(APIView):
     def get(self, request):
-        # Retrieve all attendance records
         attendance = Attendance.objects.all()
-        # Serialize the data
         serializer = AttendanceSerializer(attendance, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -473,10 +469,10 @@ class UserProfileEditView(APIView):
         except GymUser.DoesNotExist:
             return Response({'message': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
 from django.utils import timezone
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class UserProfileDetailsView(APIView):
-    def get(self, request):
+    def get(self, request,pk):
         try:
             user_profile = GymUser.objects.get(user=request.user)
             latest_weight = user_profile.weights.order_by('-measured_at').first()
@@ -497,33 +493,152 @@ class UserProfileDetailsView(APIView):
             return Response({'message': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
         
 
-class AttendanceCountView(APIView):
+class DashBoardCountView(APIView):
     def get(self, request):
         current_user = request.user
 
         try:
-            # Check if the user is a gym owner
             gym_owner = GymOwner.objects.get(user=current_user)
             gym = gym_owner.gym
             branch = None
         except GymOwner.DoesNotExist:
             try:
-                # Check if the user is a staff member
                 staff = Staff.objects.get(user=current_user)
                 gym = staff.gym
                 branch = staff.branch
             except Staff.DoesNotExist:
-                # If the user is neither a gym owner nor a staff member
                 return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Get the current date
         current_date = timezone.now().date()
-
-        # Filter attendance based on gym and branch (if any) and current date
         attendance_count = Attendance.objects.filter(
             gym=gym,
             branch=branch,
             date=current_date
         ).count()
+        enquiry_count = Enquiry.objects.filter(
+            gym=gym,
+            branch=branch,
+            follow_up_date=current_date
+        ).count()
+        absentees_count = Attendance.objects.filter(
+            gym=gym,
+            branch=branch,
+            date=current_date
+        ).exclude(user=current_user).count()
+        expired_membership_count = GymUser.objects.filter(
+            user__member__gym=gym,
+            user__member__branch=branch,
+            membership_expiry_date__lt=current_date
+        ).count()
+        expiring_users_response = ExpiringGymUsers.as_view()(request)
+        expiring_users_count = len(expiring_users_response.data)
+        return Response({
+            'attendance_count': attendance_count,
+            'enquiry_count': enquiry_count,
+            'absentees_count': absentees_count,
+            'expired_membership_count': expired_membership_count,
+            'expiring_users_count': expiring_users_count
+        }, status=status.HTTP_200_OK)
+    
+from django.db.models import Q
 
-        return Response({'attendance_count': attendance_count}, status=status.HTTP_200_OK)
+class ExpiringGymUsers(APIView):
+    def get(self, request):
+        current_user = request.user
+        
+        try:
+            gym_owner = GymOwner.objects.get(user=current_user)
+            gym = gym_owner.gym
+            branch = None
+        except GymOwner.DoesNotExist:
+            try:
+                staff = Staff.objects.get(user=current_user)
+                gym = staff.gym
+                branch = staff.branch
+            except Staff.DoesNotExist:
+                return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if branch:
+            gym_users = Member.objects.filter(Q(gym=gym) | Q(branch=branch), is_user=True).values_list('user_id', flat=True)
+        else:
+            gym_users = Member.objects.filter(gym=gym, is_user=True).values_list('user_id', flat=True)
+        
+        expiring_users = GymUser.objects.filter(user__in=gym_users, membership_expiry_date__lte=datetime.now() + timedelta(days=5))
+        
+        serializer = GymUserSerializer(expiring_users, many=True)
+        return Response(serializer.data)
+    
+
+from django.db.models import Count
+class RegularAbsenteesView(APIView):
+    def get(self, request):
+        absence_days = 3
+
+        start_date = timezone.now() - timezone.timedelta(days=absence_days)
+
+        absentees = (
+            Attendance.objects.values('user')
+            .annotate(absence_count=Count('date', distinct=True))
+            .filter(date__gte=start_date)
+            .exclude(absence_count__lt=absence_days)
+            .values_list('user', flat=True)
+        )
+
+        return Response({'absentees': list(absentees)}, status=status.HTTP_200_OK)
+    
+
+class ExpiredGymUsers(APIView):
+    def get(self, request):
+        current_user = request.user
+
+        try:
+            gym_owner = GymOwner.objects.get(user=current_user)
+            gym = gym_owner.gym
+            branch = None
+        except GymOwner.DoesNotExist:
+            try:
+                staff = Staff.objects.get(user=current_user)
+                gym = staff.gym
+                branch = staff.branch
+            except Staff.DoesNotExist:
+                return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+        current_date = timezone.now().date()
+        gym_users = Member.objects.filter(gym=gym).values_list('user', flat=True)
+        expired_gym_users = GymUser.objects.filter(
+            user__in=gym_users,
+            membership_expiry_date__lt=current_date
+        )
+        serializer = GymUserSerializer(expired_gym_users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class ExpiringGymUsers(APIView):
+    def get(self, request):
+        current_user = request.user
+
+        try:
+            gym_owner = GymOwner.objects.get(user=current_user)
+            gym = gym_owner.gym
+            branch = None
+        except GymOwner.DoesNotExist:
+            try:
+                staff = Staff.objects.get(user=current_user)
+                gym = staff.gym
+                branch = staff.branch
+            except Staff.DoesNotExist:
+                return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+
+        five_days_later = datetime.now() + timedelta(days=5)
+        
+        if branch:
+            users = Member.objects.filter(branch=branch).values_list('user_id', flat=True)
+        elif gym:
+            users = Member.objects.filter(gym=gym).values_list('user_id', flat=True)
+        else:
+            return Response({'error': 'No gym or branch specified'}, status=status.HTTP_400_BAD_REQUEST)
+
+        expiring_users = GymUser.objects.filter(user_id__in=users, membership_expiry_date__lte=five_days_later)
+        
+        serializer = GymUserSerializer(expiring_users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
