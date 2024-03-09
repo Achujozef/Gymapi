@@ -491,7 +491,18 @@ class UserProfileDetailsView(APIView):
             return Response(response_data, status=status.HTTP_200_OK)
         except GymUser.DoesNotExist:
             return Response({'message': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
-        
+from django.test import TestCase, Client
+
+class DashBoardCountViewTest(TestCase):
+    def test_dashboard_count_view(self):
+        # Create a client instance
+        client = Client()
+
+        # Make a GET request to the DashBoardCountView endpoint
+        response = client.get('/api/dash/count/')
+
+        # Check if the response status code is 200 (OK)
+        self.assertEqual(response.status_code, 200)
 
 class DashBoardCountView(APIView):
     def get(self, request):
@@ -508,29 +519,41 @@ class DashBoardCountView(APIView):
                 branch = staff.branch
             except Staff.DoesNotExist:
                 return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+        
         current_date = timezone.now().date()
+        
+        # Count attendance
         attendance_count = Attendance.objects.filter(
             gym=gym,
             branch=branch,
             date=current_date
         ).count()
+        
+        # Count enquiries
         enquiry_count = Enquiry.objects.filter(
             gym=gym,
             branch=branch,
             follow_up_date=current_date
         ).count()
+        
+        # Count absentees
         absentees_count = Attendance.objects.filter(
             gym=gym,
             branch=branch,
             date=current_date
         ).exclude(user=current_user).count()
+        
+        # Count expired memberships
         expired_membership_count = GymUser.objects.filter(
             user__member__gym=gym,
             user__member__branch=branch,
             membership_expiry_date__lt=current_date
         ).count()
-        expiring_users_response = ExpiringGymUsers.as_view()(request)
+
+        # Count expiring gym users using ExpiringGymUsers view
+        expiring_users_response = ExpiringGymUsers().get(request)
         expiring_users_count = len(expiring_users_response.data)
+
         return Response({
             'attendance_count': attendance_count,
             'enquiry_count': enquiry_count,
