@@ -140,7 +140,7 @@ REST_FRAMEWORK = {
 # settings.py
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Add your frontend domain
+    "http://localhost:3000",  
 ]
 import cloudinary
 import cloudinary_storage

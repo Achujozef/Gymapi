@@ -472,7 +472,7 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 
 class UserProfileDetailsView(APIView):
-    def get(self, request,pk):
+    def get(self, request):
         try:
             user_profile = GymUser.objects.get(user=request.user)
             latest_weight = user_profile.weights.order_by('-measured_at').first()
