@@ -460,7 +460,7 @@ class UserProfileEditView(APIView):
     def put(self, request):
         try:
             gym_user = GymUser.objects.get(user=request.user)
-            request.data["user"]=gym_user.id
+            request.data["user"]=1
             serializer = GymUserSerializer(gym_user, data=request.data)
             if serializer.is_valid():
                 serializer.save()
@@ -665,3 +665,35 @@ class ExpiringGymUsers(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
+class UserProfileDetailsView(APIView):
+    def get(self, request):
+        try:
+            gym_user = GymUser.objects.get(user=request.user)
+            # Calculate age
+            today = datetime.today()
+            age = today.year - gym_user.date_of_birth.year - ((today.month, today.day) < (gym_user.date_of_birth.month, gym_user.date_of_birth.day))
+
+            # Convert joining_date to datetime object
+            joining_date = datetime.combine(gym_user.joining_date, datetime.min.time())
+
+            # Calculate days since joining
+            days_since_joining = (today - joining_date).days
+
+            # Get profile picture URL
+            initial_weight_record = gym_user.weights.order_by('measured_at').first()
+            initial_weight = initial_weight_record.weight if initial_weight_record else None
+
+            # Prepare response data
+            response_data = {
+                "first_name": request.user.first_name,
+                "last_name": request.user.last_name,
+                "age": age,
+                "weight": gym_user.weight,
+                "height": gym_user.height,
+                "days_since_joining": days_since_joining,
+               'profile_picture': gym_user.profile_picture.url if gym_user.profile_picture else None,
+               'initial_weight':initial_weight
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except GymUser.DoesNotExist:
+            return Response({'message': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
