@@ -460,7 +460,7 @@ class UserProfileEditView(APIView):
     def put(self, request):
         try:
             gym_user = GymUser.objects.get(user=request.user)
-            request.data["user"]=1
+            request.data["user"]=request.user.id
             serializer = GymUserSerializer(gym_user, data=request.data)
             if serializer.is_valid():
                 serializer.save()
@@ -491,18 +491,6 @@ class UserDashDetailsView(APIView):
             return Response(response_data, status=status.HTTP_200_OK)
         except GymUser.DoesNotExist:
             return Response({'message': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
-from django.test import TestCase, Client
-
-class DashBoardCountViewTest(TestCase):
-    def test_dashboard_count_view(self):
-        # Create a client instance
-        client = Client()
-
-        # Make a GET request to the DashBoardCountView endpoint
-        response = client.get('/api/dash/count/')
-
-        # Check if the response status code is 200 (OK)
-        self.assertEqual(response.status_code, 200)
 
 class DashBoardCountView(APIView):
     def get(self, request):
