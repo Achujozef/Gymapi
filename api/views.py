@@ -471,7 +471,7 @@ class UserProfileEditView(APIView):
 from django.utils import timezone
 from datetime import datetime, timedelta
 
-class UserProfileDetailsView(APIView):
+class UserDashDetailsView(APIView):
     def get(self, request):
         try:
             user_profile = GymUser.objects.get(user=request.user)
