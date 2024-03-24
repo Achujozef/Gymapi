@@ -20,7 +20,7 @@ admin.site.register(SalaryTransaction)
 admin.site.register(MaintenanceTransaction)
 admin.site.register(Slot)
 admin.site.register(Booking)
-
+admin.site.register(GymPlanPayment)
 
 
 

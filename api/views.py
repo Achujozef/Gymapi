@@ -695,7 +695,6 @@ class BookSlot(APIView):
             serializer = BookingSerializer(data={'slot': slot_id, 'user': request.user.id, 'date': date})
             if serializer.is_valid():
                 serializer.save()
-                slot.available = False
                 slot.save()
                 return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
             else:
@@ -721,38 +720,10 @@ class MyBookings(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        bookings = Booking.objects.filter(user=request.user)
-        serializer = BookingSerializer(bookings, many=True)
+        bookings = Booking.objects.filter(user=request.user).order_by('-date')
+        serializer = ListBookingSerializer(bookings, many=True)
         return Response(serializer.data)
     
-
-class AllSlots(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        current_user = request.user
-
-        try:
-            member = Member.objects.get(user=current_user)
-            gym = member.gym
-            branch = member.branch
-            is_owner = member.is_owner
-            is_trainer = member.is_trainer
-            is_staff = member.is_staff
-            is_user = member.is_user
-        except Member.DoesNotExist:
-            return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
-                
-        if branch:
-            slots = Slot.objects.filter(gym=gym, branch=branch)
-        else:
-            slots = Slot.objects.filter(gym=gym)
-
-        serializer = SlotSerializer(slots, many=True)
-        
-        return Response(serializer.data)
-    
-
 
 class CreateSlots(APIView):
     permission_classes = [IsAuthenticated]
@@ -850,3 +821,122 @@ class SlotListing(APIView):
                 }]
 
         return Response(slot_data)
+    
+
+
+
+class GymPlanCreateAPIView(APIView):
+    def post(self, request):
+        current_user = request.user
+        try:
+            member = Member.objects.get(user=current_user)
+            gym_id = member.gym_id
+            branch_id = member.branch_id
+        except Member.DoesNotExist:
+            return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+
+        request_data = request.data.copy()
+        request_data['gym'] = gym_id
+        request_data['branch'] = branch_id
+        serializer = GymPlanSerializer(data=request_data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class GymPlanListAPIView(APIView):
+    def get(self, request):
+        current_user = request.user
+        try:
+            member = Member.objects.get(user=current_user)
+            gym_id = member.gym_id
+            branch_id = member.branch_id
+            gym_plans = GymPlan.objects.filter(gym=gym_id, branch=branch_id)
+            serializer = GymPlanSerializer(gym_plans, many=True)
+            return Response(serializer.data)
+        except Member.DoesNotExist:
+            return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+
+class GymPlanDetailAPIView(APIView):
+    def get_object(self, pk):
+        try:
+            return GymPlan.objects.get(pk=pk)
+        except GymPlan.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk):
+        gym_plan = self.get_object(pk)
+        serializer = GymPlanSerializer(gym_plan)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        gym_plan = self.get_object(pk)
+        serializer = GymPlanSerializer(gym_plan, data=request.data , partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        gym_plan = self.get_object(pk)
+        gym_plan.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+
+class GymPlanPaymentCreateAPIView(APIView):
+    def post(self, request):
+        current_user = request.user
+        try:
+            member = Member.objects.get(user=current_user)
+            gym_id = member.gym_id
+            branch_id = member.branch_id
+        except Member.DoesNotExist:
+            return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+
+        request_data = request.data.copy()
+        request_data['gym'] = gym_id
+        request_data['branch'] = branch_id
+        serializer = GymPlanPaymentSerializer(data=request_data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class GymPlanPaymentListAPIView(APIView):
+    def get(self, request):
+        current_user = request.user
+        try:
+            member = Member.objects.get(user=current_user)
+            gym_id = member.gym_id
+            branch_id = member.branch_id
+            gym_plan_payments = GymPlanPayment.objects.filter(gym=gym_id, branch=branch_id)
+            serializer = GymPlanPaymentSerializer(gym_plan_payments, many=True)
+            return Response(serializer.data)
+        except Member.DoesNotExist:
+            return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+
+class GymPlanPaymentDetailAPIView(APIView):
+    def get_object(self, pk):
+        try:
+            return GymPlanPayment.objects.get(pk=pk)
+        except GymPlanPayment.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk):
+        gym_plan_payment = self.get_object(pk)
+        serializer = GymPlanPaymentSerializer(gym_plan_payment)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        gym_plan_payment = self.get_object(pk)
+        serializer = GymPlanPaymentSerializer(gym_plan_payment, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        gym_plan_payment = self.get_object(pk)
+        gym_plan_payment.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

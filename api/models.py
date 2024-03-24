@@ -94,7 +94,7 @@ class GymPlan(models.Model):
 
 class GymUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    gender = models.CharField(max_length=10, default='')  # Assuming choices: Male, Female, Other
+    gender = models.CharField(max_length=10, default='')  
     date_of_birth = models.DateField(default='1900-01-01')
     contact_number = models.CharField(max_length=15, default='')
     email = models.EmailField(default='')
@@ -280,3 +280,23 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"{self.slot} - {self.user.username} - {self.date}"
+    
+
+
+
+class GymPlanPayment(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('rejected', 'Rejected'),
+    ]
+    gym = models.ForeignKey('Gym', on_delete=models.CASCADE)
+    branch = models.ForeignKey('Branch', on_delete=models.CASCADE, null=True, blank=True)
+    gym_plan = models.ForeignKey('GymPlan', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    transaction_id = models.CharField(max_length=100)
+    screenshot = models.ImageField(upload_to='payments/screenshots/')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+
+    def __str__(self):
+        return f"Payment for {self.gym_plan.name} by {self.user.username}"

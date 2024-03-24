@@ -49,3 +49,24 @@ class SlotSerializer(serializers.ModelSerializer):
     class Meta:
         model = Slot
         fields = ['id', 'gym', 'branch', 'day', 'start_time', 'end_time', 'available']
+
+class ListBookingSerializer(serializers.ModelSerializer):
+    slot_start_time = serializers.TimeField(source='slot.start_time')
+    slot_end_time = serializers.TimeField(source='slot.end_time')
+    slot_day = serializers.CharField(source='slot.get_day_display')
+
+    class Meta:
+        model = Booking
+        fields = ['id', 'slot_start_time', 'slot_end_time', 'slot_day', 'date']
+
+
+class GymPlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GymPlan
+        fields = ['id', 'gym', 'branch', 'name', 'description', 'price', 'duration', 'duration_type']
+
+
+class GymPlanPaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GymPlanPayment
+        fields = ['id', 'gym', 'branch', 'gym_plan', 'user', 'transaction_id', 'screenshot', 'status']
