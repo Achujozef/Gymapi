@@ -41,4 +41,11 @@ urlpatterns = [
     path('user-profile/', UserProfileDetailsView.as_view(), name='user_profile_details'),
     path('attendance/', AttendanceListView.as_view(), name='attendance-list'),
     path('expiring-gym-users/', ExpiringGymUsers.as_view(), name='expiring_gym_users'),
+    path('book-slot/<int:slot_id>/', BookSlot.as_view(), name='book_slot'),
+    path('cancel-booking/<int:booking_id>/', CancelBooking.as_view(), name='cancel_booking'),
+    path('my-bookings/', MyBookings.as_view(), name='my_bookings'),
+    path('create-slots/', CreateSlots.as_view(), name='create_slots'),
+    path('all-slots/', AllSlots.as_view(), name='all_slots'),
+    path('slots/', SlotListing.as_view(), name='slot_listing'),
+
 ]

@@ -39,3 +39,13 @@ class AttendanceSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'gym', 'branch', 'date', 'time']
 
 
+class BookingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Booking
+        fields = ['id', 'slot', 'user', 'date']
+
+
+class SlotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Slot
+        fields = ['id', 'gym', 'branch', 'day', 'start_time', 'end_time', 'available']

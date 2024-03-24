@@ -247,3 +247,36 @@ class MaintenanceTransaction(Transaction):
 
 class OtherExpenseTransaction(Transaction):
     pass
+
+
+
+class Slot(models.Model):
+    DAY_CHOICES = [
+        ('all', 'All'),
+        ('monday', 'Monday'),
+        ('tuesday', 'Tuesday'),
+        ('wednesday', 'Wednesday'),
+        ('thursday', 'Thursday'),
+        ('friday', 'Friday'),
+        ('saturday', 'Saturday'),
+        ('sunday', 'Sunday'),
+    ]
+    
+    gym = models.ForeignKey('Gym', on_delete=models.CASCADE)
+    branch = models.ForeignKey('Branch', on_delete=models.CASCADE, null=True, blank=True)
+    day = models.CharField(max_length=20, choices=DAY_CHOICES)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    available = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.get_day_display()} - {self.start_time} to {self.end_time}"
+
+class Booking(models.Model):
+    slot = models.ForeignKey(Slot, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    date = models.DateField()
+    booked_date = models.DateField(auto_now_add=True,null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.slot} - {self.user.username} - {self.date}"

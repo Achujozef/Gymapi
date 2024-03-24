@@ -685,3 +685,168 @@ class UserProfileDetailsView(APIView):
             return Response(response_data, status=status.HTTP_200_OK)
         except GymUser.DoesNotExist:
             return Response({'message': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+class BookSlot(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request, slot_id):
+        slot = Slot.objects.get(id=slot_id)
+        date = request.data.get('date')
+        if slot.available:
+            serializer = BookingSerializer(data={'slot': slot_id, 'user': request.user.id, 'date': date})
+            if serializer.is_valid():
+                serializer.save()
+                slot.available = False
+                slot.save()
+                return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'status': 'failed', 'message': 'Slot is not available'}, status=status.HTTP_400_BAD_REQUEST)
+
+class CancelBooking(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, booking_id):
+        booking = Booking.objects.get(id=booking_id)
+        if booking.user == request.user:
+            slot = booking.slot
+            slot.available = True
+            slot.save()
+            booking.delete()
+            return Response({'status': 'success'})
+        else:
+            return Response({'status': 'error', 'message': 'Unauthorized'}, status=status.HTTP_403_FORBIDDEN)
+
+class MyBookings(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        bookings = Booking.objects.filter(user=request.user)
+        serializer = BookingSerializer(bookings, many=True)
+        return Response(serializer.data)
+    
+
+class AllSlots(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        current_user = request.user
+
+        try:
+            member = Member.objects.get(user=current_user)
+            gym = member.gym
+            branch = member.branch
+            is_owner = member.is_owner
+            is_trainer = member.is_trainer
+            is_staff = member.is_staff
+            is_user = member.is_user
+        except Member.DoesNotExist:
+            return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+                
+        if branch:
+            slots = Slot.objects.filter(gym=gym, branch=branch)
+        else:
+            slots = Slot.objects.filter(gym=gym)
+
+        serializer = SlotSerializer(slots, many=True)
+        
+        return Response(serializer.data)
+    
+
+
+class CreateSlots(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        current_user = request.user
+
+        try:
+            member = Member.objects.get(user=current_user)
+            gym = member.gym
+            branch = member.branch
+            is_owner = member.is_owner
+            is_trainer = member.is_trainer
+            is_staff = member.is_staff
+            is_user = member.is_user
+        except Member.DoesNotExist:
+            return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+        gym_id = gym.id
+        day_type = request.data.get('day_type')
+        if day_type == 'all':
+            all_days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+            all_slots = []
+            for slot_data in request.data['slots']:
+                for day in all_days:
+                    slot_data_copy = slot_data.copy()  
+                    slot_data_copy['gym'] = gym_id
+                    slot_data_copy['day'] = day
+                    all_slots.append(slot_data_copy)
+            data = all_slots
+        else:
+            print("Reached end of")
+            data = request.data['slots']
+            for i in data:
+                i['day'] = day_type
+                i['gym'] = gym_id
+                print("data",i)
+        print(i)
+        serializer = SlotSerializer(data=data, many=True)
+        if serializer.is_valid():
+            if day_type == 'all':
+                Slot.objects.filter(gym=gym, branch=branch).delete()
+            slots = serializer.save(gym=gym, branch=branch)
+            return Response(SlotSerializer(slots, many=True).data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+
+class SlotListing(APIView):
+    def get(self, request):
+        current_user = request.user
+        try:
+            member = Member.objects.get(user=current_user)
+            gym = member.gym
+            branch = member.branch
+            is_owner = member.is_owner
+            is_trainer = member.is_trainer
+            is_staff = member.is_staff
+            is_user = member.is_user
+        except Member.DoesNotExist:
+            return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+
+        all_slots = Slot.objects.filter(gym=gym, branch=branch)
+
+        current_date = datetime.now().date()
+        bookings = Booking.objects.filter(date=current_date, slot__in=all_slots)
+
+        slot_data = {}
+        for slot in all_slots:
+            slot_bookings = bookings.filter(slot=slot)
+            booking_count = slot_bookings.count()
+            total_capacity = 77 # Assuming gym capacity is 100%
+            booking_percentage = (booking_count / total_capacity) * 100 if total_capacity != 0 else 0
+            day_display = slot.get_day_display()
+            if day_display in slot_data:
+                slot_data[day_display].append({
+                    "id": slot.id,
+                    "gym": slot.gym.id,
+                    "branch": slot.branch.id if slot.branch else None,
+                    "day": slot.day,
+                    "start_time": slot.start_time.strftime("%H:%M:%S"),
+                    "end_time": slot.end_time.strftime("%H:%M:%S"),
+                    "available": slot.available,
+                    "booking_percentage": booking_percentage
+                })
+            else:
+                slot_data[day_display] = [{
+                    "id": slot.id,
+                    "gym": slot.gym.id,
+                    "branch": slot.branch.id if slot.branch else None,
+                    "day": slot.day,
+                    "start_time": slot.start_time.strftime("%H:%M:%S"),
+                    "end_time": slot.end_time.strftime("%H:%M:%S"),
+                    "available": slot.available,
+                    "booking_percentage": booking_percentage
+                }]
+
+        return Response(slot_data)

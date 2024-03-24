@@ -18,7 +18,8 @@ admin.site.register(Transaction)
 admin.site.register(FeesTransaction)
 admin.site.register(SalaryTransaction)
 admin.site.register(MaintenanceTransaction)
-
+admin.site.register(Slot)
+admin.site.register(Booking)
 
 
 
