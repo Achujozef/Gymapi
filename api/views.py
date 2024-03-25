@@ -123,9 +123,15 @@ class GymUserCreateAPIView(APIView):
     
 from django.contrib.auth.models import AnonymousUser
 
+from rest_framework.parsers import MultiPartParser, FormParser
+
 class AddEquipment(APIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
         current_user = request.user
+        image_file = request.data.get('image', None)
+        if not image_file:
+            del request.data['image']
 
         if isinstance(current_user, AnonymousUser):
             return Response({'error': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -144,7 +150,7 @@ class AddEquipment(APIView):
 
         request.data['gym'] = gym.id
         request.data['branch'] = branch.id if branch else None
-
+      
         serializer = GymEquipmentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
