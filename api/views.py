@@ -121,9 +121,15 @@ class GymUserCreateAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+from django.contrib.auth.models import AnonymousUser
+
 class AddEquipment(APIView):
     def post(self, request):
         current_user = request.user
+
+        if isinstance(current_user, AnonymousUser):
+            return Response({'error': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+
         try:
             gym_owner = GymOwner.objects.get(user=current_user)
             gym = gym_owner.gym
