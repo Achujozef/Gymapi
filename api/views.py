@@ -131,7 +131,9 @@ class AddEquipment(APIView):
         current_user = request.user
         image_file = request.data.get('image', None)
         if not image_file:
-            del request.data['image']
+            # del request.data['image']
+            print("Image file is not specified")
+            return Response({'error': 'There is no Image associated with this Request'}, status=status.HTTP_400_BAD_REQUEST)
 
         if isinstance(current_user, AnonymousUser):
             return Response({'error': 'User is not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -952,3 +954,11 @@ class GymPlanPaymentDetailAPIView(APIView):
         gym_plan_payment = self.get_object(pk)
         gym_plan_payment.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+
+
+
+
+
