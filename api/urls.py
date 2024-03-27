@@ -48,7 +48,7 @@ urlpatterns = [
     path('my-bookings/', MyBookings.as_view(), name='my_bookings'),
     path('create-slots/', CreateSlots.as_view(), name='create_slots'),
     path('slots/', SlotListing.as_view(), name='slot_listing'),
-
+    path('user-details/', UserDetailsAPIView.as_view(), name='user-details'),
 
     path('gym-plans/', GymPlanListAPIView.as_view(), name='gym_plan_list'),
     path('gym-plans/create/', GymPlanCreateAPIView.as_view(), name='gym_plan_create'),
@@ -58,4 +58,5 @@ urlpatterns = [
     path('payments/create/', GymPlanPaymentCreateAPIView.as_view(), name='gym-plan-payment-create'),
     path('payments/list/', GymPlanPaymentListAPIView.as_view(), name='gym-plan-payment-list'),
     path('payments/detail/<int:pk>/', GymPlanPaymentDetailAPIView.as_view(), name='gym-plan-payment-detail'),
+    
 ]

@@ -16,6 +16,7 @@ from django.http import Http404
 from rest_framework.permissions import IsAuthenticated
 import cloudinary.uploader
 from datetime import datetime, timedelta
+from django.contrib.auth.models import AnonymousUser
 
 def send_otp(phone_num, otp):
     print("Reached Otp sent helper")
@@ -121,9 +122,9 @@ class GymUserCreateAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-from django.contrib.auth.models import AnonymousUser
 
-from rest_framework.parsers import MultiPartParser, FormParser
+
+
 
 class AddEquipment(APIView):
     permission_classes = [IsAuthenticated]
@@ -269,8 +270,28 @@ class AddAttendanceView(APIView):
 
 
 class AttendanceListView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure user is authenticated
+
     def get(self, request):
-        attendance = Attendance.objects.all()
+        current_user = request.user
+        try:
+            gym_owner = GymOwner.objects.get(user=current_user)
+            gym = gym_owner.gym
+            branch = None
+        except GymOwner.DoesNotExist:
+            try:
+                staff = Staff.objects.get(user=current_user)
+                gym = staff.gym
+                branch = staff.branch
+            except Staff.DoesNotExist:
+                return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Filter attendance based on the gym or gym branch
+        if branch:
+            attendance = Attendance.objects.filter(branch=branch)
+        else:
+            attendance = Attendance.objects.filter(gym=gym)
+
         serializer = AttendanceSerializer(attendance, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -956,9 +977,41 @@ class GymPlanPaymentDetailAPIView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class UserDetailsAPIView(APIView):
+    def post(self, request):
+        data = request.data
+        user_type = data.get('user_type')
+        user_id = data.get('user_id')
+        user_details = {}
+        current_user = request.user
+        print(user_type,user_id)
+        try:
+            # Find the gym or gym branch associated with the requesting user
+            member = Member.objects.get(user=current_user)
+            gym = member.gym
+            branch = member.branch
+        except Member.DoesNotExist:
+            return Response({'error': 'User is not associated with any gym or branch'}, status=400)
 
+        if user_type == 'Members':
+            # Filter GymUser model by user_id and associated gym
+            gym_user = get_object_or_404(GymUser, user_id=user_id, user__member__gym=gym)
+            user_details['full_name'] = f"{gym_user.user.first_name} {gym_user.user.last_name}"
+            user_details['id'] = gym_user.user.id
+            user_details['phone'] = gym_user.contact_number
+        elif user_type == 'Trainers':
+            # Filter GymTrainer model by user_id and associated gym
+            gym_trainer = get_object_or_404(GymTrainer, user_id=user_id, user__member__gym=gym)
+            user_details['full_name'] = f"{gym_trainer.user.first_name} {gym_trainer.user.last_name}"
+            user_details['id'] = gym_trainer.user.id
+            user_details['phone'] = gym_trainer.contact_number
+        elif user_type == 'Staffs':
+            # Filter Staff model by user_id and associated gym
+            staff = get_object_or_404(Staff, user_id=user_id, gym=gym)
+            user_details['full_name'] = f"{staff.user.first_name} {staff.user.last_name}"
+            user_details['id'] = staff.user.id
+            user_details['phone'] = staff.contact_number
+        else:
+            return Response({'error': 'Invalid user type'}, status=400)
 
-
-
-
-
+        return Response(user_details)
