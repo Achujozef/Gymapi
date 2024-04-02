@@ -233,24 +233,24 @@ class AddAttendanceView(APIView):
                 branch = staff.branch
             except Staff.DoesNotExist:
                 return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
-
+      
         user_id = request.data.get('user_id')
         user_type = request.data.get('user_type')  
-
+        print(user_id,user_type)
 
         if not user_id or not user_type:
             return Response({'error': 'Missing required fields in request'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            if user_type == 'user':
+            if user_type == 'Members':
                 user = User.objects.get(pk=user_id)
                 if not Member.objects.filter(user=user, gym=gym).exists():
                     return Response({'error': 'User is not associated with the gym'}, status=status.HTTP_400_BAD_REQUEST)
-            elif user_type == 'trainer':
+            elif user_type == 'Trainers':
                 trainer = GymTrainer.objects.get(user=user_id)
                 if trainer.gym != gym:
                     return Response({'error': 'Trainer is not associated with the gym'}, status=status.HTTP_400_BAD_REQUEST)
-            elif user_type == 'staff':
+            elif user_type == 'Staffs':
                 staff = Staff.objects.get(pk=user_id)
                 if staff.gym != gym:
                     return Response({'error': 'Staff member is not associated with the gym'}, status=status.HTTP_400_BAD_REQUEST)
@@ -267,7 +267,6 @@ class AddAttendanceView(APIView):
 
         return Response({'message': 'Attendance recorded successfully'}, status=status.HTTP_201_CREATED)
         
-
 
 class AttendanceListView(APIView):
     permission_classes = [IsAuthenticated]  # Ensure user is authenticated
@@ -292,9 +291,60 @@ class AttendanceListView(APIView):
         else:
             attendance = Attendance.objects.filter(gym=gym)
 
+        # Serialize attendance data
         serializer = AttendanceSerializer(attendance, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
+        # Modify the serialized data to include user details
+        serialized_data_with_user_details = []
+        for entry in serializer.data:
+            user_id = entry['user']
+            user = User.objects.get(pk=user_id)
+
+            # Get user type
+            try:
+                gym_user = GymUser.objects.get(user=user)
+                user_type = 'GymUser'
+            except GymUser.DoesNotExist:
+                try:
+                    gym_trainer = GymTrainer.objects.get(user=user)
+                    user_type = 'GymTrainer'
+                except GymTrainer.DoesNotExist:
+                    try:
+                        staff = Staff.objects.get(user=user)
+                        user_type = 'Staff'
+                    except Staff.DoesNotExist:
+                        user_type = 'Unknown'
+
+            # Prepare user details based on user type
+            if user_type == 'GymUser':
+                user_details = {
+                    'profile_image': gym_user.profile_picture.url if gym_user.profile_picture else '',
+                    'full_name': f"{user.first_name} {user.last_name}",
+                    'contact_number': gym_user.contact_number,
+                }
+            elif user_type == 'GymTrainer':
+                user_details = {
+                    'profile_image': gym_trainer.profile_picture.url if gym_trainer.profile_picture else '',
+                    'full_name': f"{user.first_name} {user.last_name}",
+                    'contact_number': gym_trainer.contact_number,
+                }
+            elif user_type == 'Staff':
+                user_details = {
+                    'profile_image': '',
+                    'full_name': f"{user.first_name} {user.last_name}",
+                    'contact_number': '',
+                }
+            else:
+                user_details = {
+                    'profile_image': '',
+                    'full_name': '',
+                    'contact_number': '',
+                }
+                
+            entry.update(user_details)
+            serialized_data_with_user_details.append(entry)
+            print(serialized_data_with_user_details)
+        return Response(serialized_data_with_user_details, status=status.HTTP_200_OK)
 
 class DeleteAttendance(APIView):
     def delete(self, request, attendance_id):
@@ -984,7 +1034,7 @@ class UserDetailsAPIView(APIView):
         user_id = data.get('user_id')
         user_details = {}
         current_user = request.user
-        print(user_type,user_id)
+       
         try:
             # Find the gym or gym branch associated with the requesting user
             member = Member.objects.get(user=current_user)
@@ -992,7 +1042,7 @@ class UserDetailsAPIView(APIView):
             branch = member.branch
         except Member.DoesNotExist:
             return Response({'error': 'User is not associated with any gym or branch'}, status=400)
-
+        print(user_type,user_id)
         if user_type == 'Members':
             # Filter GymUser model by user_id and associated gym
             gym_user = get_object_or_404(GymUser, user_id=user_id, user__member__gym=gym)
