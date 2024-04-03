@@ -40,6 +40,7 @@ urlpatterns = [
     path('expiring-gym-users/', ExpiringGymUsers.as_view(), name='expiring_gym_users'),
     path('user-profile/', UserProfileDetailsView.as_view(), name='user_profile_details'),
     path('attendance/', AttendanceListView.as_view(), name='attendance-list'),
+    path('attendance/filter/', AttendanceByUserTypeView.as_view(), name='attendance-by-user-type'),
     path('expiring-gym-users/', ExpiringGymUsers.as_view(), name='expiring_gym_users'),
 
 

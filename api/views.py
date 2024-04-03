@@ -346,6 +346,86 @@ class AttendanceListView(APIView):
             print(serialized_data_with_user_details)
         return Response(serialized_data_with_user_details, status=status.HTTP_200_OK)
 
+
+
+class AttendanceByUserTypeView(APIView):
+    permission_classes = [IsAuthenticated]  # Ensure user is authenticated
+
+    def get(self, request):
+        user_type = request.data.get('user_type', None)
+        current_user = request.user
+        try:
+            gym_owner = GymOwner.objects.get(user=current_user)
+            gym = gym_owner.gym
+            branch = None
+        except GymOwner.DoesNotExist:
+            try:
+                staff = Staff.objects.get(user=current_user)
+                gym = staff.gym
+                branch = staff.branch
+            except Staff.DoesNotExist:
+                return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Filter attendance based on the gym or gym branch
+        if branch:
+            attendance = Attendance.objects.filter(branch=branch)
+        else:
+            attendance = Attendance.objects.filter(gym=gym)
+
+        # Filter attendance based on user type
+        if user_type == 'user':
+            attendance = attendance.filter(user__member__is_user=True)
+        elif user_type == 'staff':
+            attendance = attendance.filter(user__staff__is_staff=True)
+        elif user_type == 'trainer':
+            attendance = attendance.filter(user__gymtrainer__is_trainer=True)
+        else:
+            return Response({'error': 'Invalid user type'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Serialize attendance data
+        serializer = AttendanceSerializer(attendance, many=True)
+
+        # Modify the serialized data to include user details
+        serialized_data_with_user_details = []
+        for entry in serializer.data:
+            user_id = entry['user']
+            user = User.objects.get(pk=user_id)
+
+            # Prepare user details based on user type
+            if user_type == 'user':
+                gym_user = GymUser.objects.get(user=user)
+                user_details = {
+                    'profile_image': gym_user.profile_picture.url if gym_user.profile_picture else '',
+                    'full_name': f"{user.first_name} {user.last_name}",
+                    'contact_number': gym_user.contact_number,
+                }
+            elif user_type == 'trainer':
+                gym_trainer = GymTrainer.objects.get(user=user)
+                user_details = {
+                    'profile_image': gym_trainer.profile_picture.url if gym_trainer.profile_picture else '',
+                    'full_name': f"{user.first_name} {user.last_name}",
+                    'contact_number': gym_trainer.contact_number,
+                }
+            elif user_type == 'staff':
+                staff = Staff.objects.get(user=user)
+                user_details = {
+                    'profile_image': '',
+                    'full_name': f"{user.first_name} {user.last_name}",
+                    'contact_number': '',
+                }
+            else:
+                user_details = {
+                    'profile_image': '',
+                    'full_name': '',
+                    'contact_number': '',
+                }
+                
+            entry.update(user_details)
+            serialized_data_with_user_details.append(entry)
+
+        return Response(serialized_data_with_user_details, status=status.HTTP_200_OK)
+    
+
 class DeleteAttendance(APIView):
     def delete(self, request, attendance_id):
         try:
@@ -545,7 +625,21 @@ class UserProfileEditView(APIView):
     def put(self, request):
         try:
             gym_user = GymUser.objects.get(user=request.user)
-            request.data["user"]=request.user.id
+            user_instance = request.user  # Fetch the User instance
+
+            # Check if 'first_name' and 'last_name' are present in the request.data
+            if 'first_name' in request.data:
+                user_instance.first_name = request.data['first_name']
+            if 'last_name' in request.data:
+                user_instance.last_name = request.data['last_name']
+
+            # Save the changes to the User instance
+            user_instance.save()
+            print(user_instance.last_name)
+            # Update the user field in request.data with the user's ID
+            request.data['user'] = request.user.id
+            
+            # Serialize and save the GymUser instance
             serializer = GymUserSerializer(gym_user, data=request.data)
             if serializer.is_valid():
                 serializer.save()
@@ -553,6 +647,8 @@ class UserProfileEditView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except GymUser.DoesNotExist:
             return Response({'message': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+
 from django.utils import timezone
 from datetime import datetime, timedelta
 
