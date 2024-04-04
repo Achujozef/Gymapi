@@ -1036,6 +1036,11 @@ class GymPlanListAPIView(APIView):
             branch_id = member.branch_id
             gym_plans = GymPlan.objects.filter(gym=gym_id, branch=branch_id)
             serializer = GymPlanSerializer(gym_plans, many=True)
+            for data in serializer.data:
+                plan_id = data['id']
+                features = PlanFeature.objects.filter(plan_id=plan_id).values_list('feature', flat=True)
+                data['features'] = list(features)
+            
             return Response(serializer.data)
         except Member.DoesNotExist:
             return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
