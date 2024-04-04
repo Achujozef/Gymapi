@@ -349,10 +349,12 @@ class AttendanceListView(APIView):
 
 
 class AttendanceByUserTypeView(APIView):
-    permission_classes = [IsAuthenticated]  # Ensure user is authenticated
+    # permission_classes = [IsAuthenticated]  
 
-    def get(self, request):
-        user_type = request.data.get('user_type', None)
+    def get(self, request, *args, **kwargs):
+        user_type = request.query_params.get('user_type', None)
+        print('user_type',user_type)
+        
         current_user = request.user
         try:
             gym_owner = GymOwner.objects.get(user=current_user)
@@ -376,11 +378,12 @@ class AttendanceByUserTypeView(APIView):
         if user_type == 'user':
             attendance = attendance.filter(user__member__is_user=True)
         elif user_type == 'staff':
-            attendance = attendance.filter(user__staff__is_staff=True)
+            attendance = attendance.filter(user__is_staff=True)  # Corrected filtering
         elif user_type == 'trainer':
-            attendance = attendance.filter(user__gymtrainer__is_trainer=True)
+            attendance = attendance.filter(user__gymtrainer__isnull=False)
         else:
             return Response({'error': 'Invalid user type'}, status=status.HTTP_400_BAD_REQUEST)
+
 
         # Serialize attendance data
         serializer = AttendanceSerializer(attendance, many=True)
@@ -911,7 +914,6 @@ class CreateSlots(APIView):
 
     def post(self, request):
         current_user = request.user
-
         try:
             member = Member.objects.get(user=current_user)
             gym = member.gym
@@ -924,10 +926,12 @@ class CreateSlots(APIView):
             return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
         gym_id = gym.id
         day_type = request.data.get('day_type')
+        print(day_type)
         if day_type == 'all':
             all_days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
             all_slots = []
-            for slot_data in request.data['slots']:
+            slots_data = request.data.get('slots', [])  # Retrieve the 'slots' key from request.data
+            for slot_data in slots_data:  # Iterate over the list of slots
                 for day in all_days:
                     slot_data_copy = slot_data.copy()  
                     slot_data_copy['gym'] = gym_id
@@ -935,13 +939,11 @@ class CreateSlots(APIView):
                     all_slots.append(slot_data_copy)
             data = all_slots
         else:
-            print("Reached end of")
-            data = request.data['slots']
-            for i in data:
-                i['day'] = day_type
-                i['gym'] = gym_id
-                print("data",i)
-        print(i)
+            data = request.data
+            for slot in data:  # Iterate over the slots
+                slot['day'] = day_type  # Assign the day_type to the 'day' key of each slot
+                slot['gym'] = gym_id
+            print(data)
         serializer = SlotSerializer(data=data, many=True)
         if serializer.is_valid():
             if day_type == 'all':
