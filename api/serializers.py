@@ -63,7 +63,7 @@ class ListBookingSerializer(serializers.ModelSerializer):
 class GymPlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = GymPlan
-        fields = ['id', 'gym', 'branch', 'name', 'description', 'price', 'duration', 'duration_type']
+        fields = ['id', 'gym', 'branch', 'name', 'description', 'price', 'duration', 'duration_type','image','terms_and_conditions']
 
 
 class GymPlanPaymentSerializer(serializers.ModelSerializer):
