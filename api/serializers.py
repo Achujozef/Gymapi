@@ -69,4 +69,4 @@ class GymPlanSerializer(serializers.ModelSerializer):
 class GymPlanPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = GymPlanPayment
-        fields = ['id', 'gym', 'branch', 'gym_plan', 'user', 'transaction_id', 'screenshot', 'status']
+        fields ='__all__'

@@ -311,3 +311,34 @@ class GymPlanPayment(models.Model):
 
     def __str__(self):
         return f"Payment for {self.gym_plan.name} by {self.user.username}"
+
+
+# from django.db import models
+
+# class DietPlan(models.Model):
+#     gym = models.ForeignKey('Gym', on_delete=models.CASCADE)
+#     branch = models.ForeignKey('Branch', on_delete=models.CASCADE, null=True, blank=True)
+#     name = models.CharField(max_length=100)
+#     description = models.TextField(blank=True)
+#     created_by = models.ForeignKey(User, on_delete=models.CASCADE)  
+#     created_at = models.DateTimeField(auto_now_add=True)
+
+#     def __str__(self):
+#         return self.name
+
+# class DietPlanDay(models.Model):
+#     diet_plan = models.ForeignKey(DietPlan, on_delete=models.CASCADE, related_name='days')
+#     day = models.CharField(max_length=20)  
+    
+#     def __str__(self):
+#         return f"{self.diet_plan.name} - {self.day}"
+
+# class DietPlanTiming(models.Model):
+#     diet_plan_day = models.ForeignKey(DietPlanDay, on_delete=models.CASCADE, related_name='timings')
+#     time = models.TimeField()
+#     name = models.CharField(max_length=100)
+#     is_done = models.BooleanField(default=False)
+#     description = models.TextField(blank=True)
+
+#     def __str__(self):
+#         return f"{self.diet_plan_day.day} - {self.time.strftime('%H:%M')} - {self.name}"

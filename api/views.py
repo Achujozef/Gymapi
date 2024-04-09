@@ -926,12 +926,12 @@ class CreateSlots(APIView):
             return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
         gym_id = gym.id
         day_type = request.data.get('day_type')
-        print(day_type)
+        # print('day_type',day_type)
         if day_type == 'all':
             all_days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
             all_slots = []
-            slots_data = request.data.get('slots', [])  # Retrieve the 'slots' key from request.data
-            for slot_data in slots_data:  # Iterate over the list of slots
+            slots_data = request.data.get('slots', [])  
+            for slot_data in slots_data:
                 for day in all_days:
                     slot_data_copy = slot_data.copy()  
                     slot_data_copy['gym'] = gym_id
@@ -939,11 +939,15 @@ class CreateSlots(APIView):
                     all_slots.append(slot_data_copy)
             data = all_slots
         else:
+            all_slots = []
             data = request.data
-            for slot in data:  # Iterate over the slots
-                slot['day'] = day_type  # Assign the day_type to the 'day' key of each slot
+            for slot in data['slots']:
+                slot['day'] = day_type  
                 slot['gym'] = gym_id
-            print(data)
+               
+                all_slots.append(slot)
+        data = all_slots
+        print(data)
         serializer = SlotSerializer(data=data, many=True)
         if serializer.is_valid():
             if day_type == 'all':
@@ -1085,6 +1089,7 @@ class GymPlanPaymentCreateAPIView(APIView):
         request_data = request.data.copy()
         request_data['gym'] = gym_id
         request_data['branch'] = branch_id
+        request_data['user'] = current_user
         serializer = GymPlanPaymentSerializer(data=request_data)
         if serializer.is_valid():
             serializer.save()
