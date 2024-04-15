@@ -22,6 +22,9 @@ admin.site.register(Slot)
 admin.site.register(Booking)
 admin.site.register(GymPlanPayment)
 admin.site.register(PlanFeature)
+admin.site.register(DietPlan)
+admin.site.register(DietPlanDay)
+admin.site.register(DietPlanTiming)
 
 
 

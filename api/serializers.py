@@ -70,3 +70,33 @@ class GymPlanPaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = GymPlanPayment
         fields ='__all__'
+
+
+class DietPlanTimingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DietPlanTiming
+        fields = ['time', 'item_name', 'is_done', 'description']
+
+class DietPlanDaySerializer(serializers.ModelSerializer):
+    timings = DietPlanTimingSerializer(many=True)
+
+    class Meta:
+        model = DietPlanDay
+        fields = ['day', 'timings']
+
+class DietPlanSerializer(serializers.ModelSerializer):
+    days = DietPlanDaySerializer(many=True)
+
+    class Meta:
+        model = DietPlan
+        fields = ['gym', 'branch', 'name', 'description', 'days']
+
+    def create(self, validated_data):
+        days_data = validated_data.pop('days')
+        diet_plan = DietPlan.objects.create(**validated_data)
+        for day_data in days_data:
+            timings_data = day_data.pop('timings')
+            diet_plan_day = DietPlanDay.objects.create(diet_plan=diet_plan, **day_data)
+            for timing_data in timings_data:
+                DietPlanTiming.objects.create(diet_plan_day=diet_plan_day, **timing_data)
+        return diet_plan

@@ -1089,7 +1089,7 @@ class GymPlanPaymentCreateAPIView(APIView):
         request_data = request.data.copy()
         request_data['gym'] = gym_id
         request_data['branch'] = branch_id
-        request_data['user'] = current_user
+        request_data['user'] = current_user.id
         serializer = GymPlanPaymentSerializer(data=request_data)
         if serializer.is_valid():
             serializer.save()
@@ -1173,3 +1173,45 @@ class UserDetailsAPIView(APIView):
             return Response({'error': 'Invalid user type'}, status=400)
 
         return Response(user_details)
+    
+
+class CreateDietPlan(APIView):
+    def post(self, request):
+        current_user = request.user
+        try:
+            gym_owner = GymOwner.objects.get(user=current_user)
+            gym = gym_owner.gym
+            branch = None
+        except GymOwner.DoesNotExist:
+            try:
+                staff = Staff.objects.get(user=current_user)
+                gym = staff.gym
+                branch = staff.branch
+            except Staff.DoesNotExist:
+                return Response({'error': 'User is not associated with any gym or branch'}, status=status.HTTP_400_BAD_REQUEST)
+        request.data['gym'] = gym.id
+        request.data['branch'] = branch.id if branch else None
+        serializer = DietPlanSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(gym=gym, branch=branch)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class ListGymDiets(APIView):
+    def get(self, request):
+        current_user = request.user
+        try:
+            # Find the gym or gym branch associated with the requesting user
+            member = Member.objects.get(user=current_user)
+            gym = member.gym
+            branch = member.branch
+        except Member.DoesNotExist:
+            return Response({'error': 'User is not associated with any gym or branch'}, status=400)
+        if branch:
+            diets = DietPlan.objects.filter(branch=branch)
+        else:
+            diets = DietPlan.objects.filter(gym=gym)
+
+        serializer = DietPlanSerializer(diets, many=True)
+        return Response(serializer.data)
+
