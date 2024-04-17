@@ -1025,12 +1025,22 @@ class GymPlanCreateAPIView(APIView):
         request_data = request.data.copy()
         request_data['gym'] = gym_id
         request_data['branch'] = branch_id
+        
+        # Extract features from request data
+        features_data = request_data.pop('features', [])  # assuming features are sent as a list of strings
+        
         serializer = GymPlanSerializer(data=request_data)
         if serializer.is_valid():
-            serializer.save()
+            gym_plan = serializer.save()
+            
+            # Create and associate features with the gym plan
+            for feature_name in features_data:
+                feature, _ = PlanFeature.objects.get_or_create(feature=feature_name, plan=gym_plan)
+                
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+    
+    
 class GymPlanListAPIView(APIView):
     def get(self, request):
         current_user = request.user
