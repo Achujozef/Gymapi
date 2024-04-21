@@ -1225,3 +1225,40 @@ class ListGymDiets(APIView):
         serializer = DietPlanSerializer(diets, many=True)
         return Response(serializer.data)
 
+class UserDietPlanAPIView(APIView):
+    def get(self, request):
+        try:
+            user = GymUser.objects.get(user_id=request.user.id)
+            diet_assignments = DietAssignment.objects.filter(user=user, is_active=True)
+            diet_plans = [assignment.diet_plan for assignment in diet_assignments]
+            today_day_name = datetime.today().strftime('%A')
+            todays_diet_plan = next((diet_plan for diet_plan in diet_plans if any(day.day == today_day_name for day in diet_plan.days.all())), None)
+            if todays_diet_plan:
+                serializer = DietPlanSerializer(todays_diet_plan)
+                for day in serializer.data["days"]:
+                    if day["day"] == "Wednesday":
+                        print("day",day)
+                        break
+                data=serializer.data
+                data['days']=day
+                return Response(data, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": "No diet plan available for today"}, status=status.HTTP_404_NOT_FOUND)
+                
+        except GymUser.DoesNotExist:
+            return Response({"error": "User does not exist"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+class ToggleIsDoneView(APIView):
+    def post(self, request, timing_id):
+        try:
+            timing = DietPlanTiming.objects.get(pk=timing_id)
+        except DietPlanTiming.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        
+        timing.is_done = not timing.is_done
+        timing.save()
+
+        return Response({"is_done": timing.is_done}, status=status.HTTP_200_OK)

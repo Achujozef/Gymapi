@@ -138,6 +138,8 @@ class GymUser(models.Model):
     height = models.FloatField(blank=True, null=True)
     proffession = models.CharField(max_length=100, default='')
 
+
+
 class UserWeight(models.Model):
     user = models.ForeignKey(GymUser, on_delete=models.CASCADE, related_name='weights')
     weight = models.FloatField()
@@ -340,3 +342,13 @@ class DietPlanTiming(models.Model):
 
     def __str__(self):
         return f"{self.diet_plan_day.day} - {self.time.strftime('%H:%M')}"
+
+
+class DietAssignment(models.Model):
+    user = models.ForeignKey(GymUser, on_delete=models.CASCADE)
+    diet_plan = models.ForeignKey(DietPlan, on_delete=models.CASCADE)
+    assigned_date = models.DateField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.user.user.username} - {self.diet_plan.name}"

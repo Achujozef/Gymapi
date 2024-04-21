@@ -25,6 +25,7 @@ admin.site.register(PlanFeature)
 admin.site.register(DietPlan)
 admin.site.register(DietPlanDay)
 admin.site.register(DietPlanTiming)
+admin.site.register(DietAssignment)
 
 
 

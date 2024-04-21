@@ -75,7 +75,7 @@ class GymPlanPaymentSerializer(serializers.ModelSerializer):
 class DietPlanTimingSerializer(serializers.ModelSerializer):
     class Meta:
         model = DietPlanTiming
-        fields = ['time', 'item_name', 'is_done', 'description']
+        fields = ['id','time', 'item_name', 'is_done', 'description']
 
 class DietPlanDaySerializer(serializers.ModelSerializer):
     timings = DietPlanTimingSerializer(many=True)
