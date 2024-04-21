@@ -66,4 +66,7 @@ urlpatterns = [
     path('gym-diets/', ListGymDiets.as_view(), name='list_gym_diets'),
     path('user/diet-plan/', UserDietPlanAPIView.as_view(), name='user_diet_plan'),
     path('toggle-timing/<int:timing_id>/', ToggleIsDoneView.as_view(), name='toggle_timing'),
+
+
+    path('list-gym-trainers/', ListGymTrainers.as_view(), name='list_gym_trainers'),
 ]

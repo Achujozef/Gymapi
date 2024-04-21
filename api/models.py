@@ -74,7 +74,7 @@ class GymTrainer(models.Model):
     health_conditions = models.TextField()
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name} (Trainer ID: {self.trainer_id})"
+        return f"(Trainer ID: {self.trainer_id})"
 
 class GymPlan(models.Model):
     DURATION_CHOICES = [

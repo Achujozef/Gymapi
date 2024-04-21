@@ -26,6 +26,7 @@ admin.site.register(DietPlan)
 admin.site.register(DietPlanDay)
 admin.site.register(DietPlanTiming)
 admin.site.register(DietAssignment)
+admin.site.register(GymTrainer)
 
 
 

@@ -100,3 +100,9 @@ class DietPlanSerializer(serializers.ModelSerializer):
             for timing_data in timings_data:
                 DietPlanTiming.objects.create(diet_plan_day=diet_plan_day, **timing_data)
         return diet_plan
+    
+
+class GymTrainerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GymTrainer
+        fields = ['id', 'user', 'date_of_birth', 'contact_number', 'email', 'trainer_id', 'certification_level', 'certification_expiry_date', 'education_and_training_background', 'regular_working_hours', 'areas_of_expertise', 'specialized_certifications_or_skills', 'bio', 'profile_picture', 'salary', 'bonus_or_commission_information', 'documents', 'emergency_contact_information', 'health_conditions']
