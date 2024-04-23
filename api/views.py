@@ -1236,7 +1236,7 @@ class UserDietPlanAPIView(APIView):
             if todays_diet_plan:
                 serializer = DietPlanSerializer(todays_diet_plan)
                 for day in serializer.data["days"]:
-                    if day["day"] == "Wednesday":
+                    if day["day"] == today_day_name:
                         print("day",day)
                         break
                 data=serializer.data
@@ -1270,28 +1270,21 @@ class ListGymTrainers(APIView):
     def get(self, request):
         current_user = request.user
         try:
-            # Find the gym or gym branch associated with the requesting user
             member = Member.objects.get(user=current_user)
             gym = member.gym
             branch = member.branch
-
-            # Fetch gym trainers related to the gym or gym branch
             gym_trainers_members = Member.objects.filter(
                 gym=gym,
                 branch=branch if branch else None,
                 is_trainer=True
             )
-
-            # Get the users associated with gym trainers
             gym_trainer_users = gym_trainers_members.values_list('user', flat=True)
             print('gym_trainer_users', gym_trainer_users)
-
-            # Fetch the GymTrainer objects using the list of user IDs
             gym_trainers = GymTrainer.objects.filter(user__in=gym_trainer_users)
             print('gym_trainers', gym_trainers)
-            # Serialize the gym trainers
             serializer = GymTrainerSerializer(gym_trainers, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
+        
 
         except Member.DoesNotExist:
             return Response({"error": "User is not associated with any gym or gym branch"}, status=status.HTTP_404_NOT_FOUND)
