@@ -185,7 +185,7 @@ class GymEquipment(models.Model):
     availability = models.BooleanField(default=True)
     image = models.ImageField(upload_to='gym_eqp_pictures/', blank=True, null=True)
     additional_notes = models.TextField(blank=True, null=True)
-
+    
     def __str__(self):
         return self.name
     
@@ -351,4 +351,4 @@ class DietAssignment(models.Model):
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.user.user.username} - {self.diet_plan.name}"
+        return f"{self.user.user.username} - {self.diet_plan.name}" 

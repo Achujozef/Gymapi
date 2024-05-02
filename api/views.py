@@ -113,7 +113,23 @@ class ResetPasswordView(APIView):
         except GymUser.DoesNotExist:
             return Response({'error': 'User does not exist.'}, status=404)
 
+from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import make_password
 
+class ChangePasswordAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        old_password = request.data.get('old_password')
+        new_password = request.data.get('new_password')
+
+        user = request.user
+
+        if authenticate(username=user.username, password=old_password):
+            user.set_password(new_password)
+            user.save()
+            return Response({"message": "Password changed successfully"}, status=status.HTTP_200_OK)
+        else:
+            return Response({"message": "Old password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+        
 class GymUserCreateAPIView(APIView):
     def post(self, request):
         serializer = GymUserSerializer(data=request.data)
